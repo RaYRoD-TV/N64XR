@@ -5,12 +5,18 @@
 // Replaced in Phase 1a workstream C with a Vulkan-rendered CRT room scene.
 
 #define XR_USE_GRAPHICS_API_VULKAN 1
-#define XR_USE_PLATFORM_WIN32      1
-#define VK_USE_PLATFORM_WIN32_KHR  1
-
+// Deliberately NOT defining XR_USE_PLATFORM_WIN32 — it pulls in MSFT
+// perception-anchor + holographic-window-attachment structs that need
+// IUnknown (COM), which isn't worth the dependency for the Phase 1
+// smoke test. The Win32-perf-counter extension we used to list is
+// dropped too (it was unused).
+//
+// Order matters: openxr_platform.h references VkInstance/VkDevice/etc
+// inside its Vulkan conditional structs — vulkan.h must be visible
+// BEFORE the platform header is parsed.
+#include <vulkan/vulkan.h>
 #include <openxr/openxr.h>
 #include <openxr/openxr_platform.h>
-#include <vulkan/vulkan.h>
 
 #include <cstdint>
 #include <vector>

@@ -11,6 +11,7 @@
 #include <imgui.h>
 #include <spdlog/spdlog.h>
 
+#include <cmath>      // std::floor
 #include <filesystem>
 #include <string>
 
@@ -71,9 +72,8 @@ void LoadFonts(float dpiScale) {
         spdlog::warn("Theme: JetBrainsMono missing — using ImGui default as body face.");
         g_fonts.body = atlas->Fonts.back();
     }
-    if (!atlas->Build()) {
-        spdlog::error("Theme: ImFontAtlas::Build() failed.");
-    }
+    // ImGui 1.92 bakes font textures lazily on first use — the old
+    // ImFontAtlas::Build() is no longer needed (and was removed).
 }
 
 // ---------------------------------------------------------------------------

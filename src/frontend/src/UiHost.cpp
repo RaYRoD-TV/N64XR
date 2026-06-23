@@ -22,7 +22,8 @@
 #include "Screens.h"
 #include "AppState.h"
 
-#define GLFW_INCLUDE_VULKAN
+// GLFW_INCLUDE_VULKAN is set as a frontend compile def (see src/frontend/CMakeLists.txt)
+// so glfw3.h pulls in vulkan.h automatically — don't redefine here.
 #include <GLFW/glfw3.h>
 
 #include <imgui.h>
@@ -484,8 +485,11 @@ void UiHost::Impl::initImGui() {
     vi.DescriptorPool = imguiPool;
     vi.MinImageCount  = 2;
     vi.ImageCount     = static_cast<uint32_t>(scImages.size());
-    vi.MSAASamples    = VK_SAMPLE_COUNT_1_BIT;
-    vi.RenderPass     = renderPass;
+    // ImGui 1.92 (2025-09-26): RenderPass / Subpass / MSAASamples moved into
+    // ImGui_ImplVulkan_PipelineInfo PipelineInfoMain.
+    vi.PipelineInfoMain.RenderPass  = renderPass;
+    vi.PipelineInfoMain.Subpass     = 0;
+    vi.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
     ImGui_ImplVulkan_Init(&vi);
 
     spdlog::info("ImGui initialised at {:.2f}x DPI scale ({} swapchain images).",

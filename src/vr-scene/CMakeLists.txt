@@ -21,6 +21,4 @@ target_link_libraries(n64xr_vr_scene
 target_compile_definitions(n64xr_vr_scene
     PUBLIC
         XR_USE_GRAPHICS_API_VULKAN=1
-        XR_USE_PLATFORM_WIN32=1
-        VK_USE_PLATFORM_WIN32_KHR=1
 )

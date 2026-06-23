@@ -117,7 +117,7 @@ void DrawPhosphorStatusStrip(const AppState& state) {
                 ImGui::ColorConvertFloat4ToU32(pal.brassDim), 1.0f);
 
     ImFont* f = theme::GetFonts().phosphor ? theme::GetFonts().phosphor : ImGui::GetFont();
-    const float fontPx = f->FontSize;
+    const float fontPx = f->LegacySize;  // ImGui 1.92 renamed ImFont::FontSize -> LegacySize
     const ImU32 green  = ImGui::ColorConvertFloat4ToU32(pal.phosphor);
     const ImU32 greenD = ImGui::ColorConvertFloat4ToU32(pal.phosphorDim);
 

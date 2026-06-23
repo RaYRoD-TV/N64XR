@@ -40,8 +40,11 @@ target_link_libraries(n64xr_frontend
 
 target_compile_definitions(n64xr_frontend PRIVATE
     GLFW_INCLUDE_VULKAN
-    VK_NO_PROTOTYPES=0
     IMGUI_DEFINE_MATH_OPERATORS
+    # Match vr-scene PUBLIC defines so HomeScreen.cpp's #include "XrSession.h"
+    # sees the OpenXR Vulkan structs in their complete form regardless of
+    # include order in any TU that pulls XrSession.h transitively.
+    XR_USE_GRAPHICS_API_VULKAN=1
 )
 
 if (MSVC)

@@ -35,9 +35,8 @@ bool XrSession::initialize() {
 }
 
 bool XrSession::createXrInstance() {
-    const std::array<const char*, 2> extensions{
+    const std::array<const char*, 1> extensions{
         XR_KHR_VULKAN_ENABLE2_EXTENSION_NAME,
-        XR_KHR_WIN32_CONVERT_PERFORMANCE_COUNTER_TIME_EXTENSION_NAME,
     };
 
     XrInstanceCreateInfo create{XR_TYPE_INSTANCE_CREATE_INFO};

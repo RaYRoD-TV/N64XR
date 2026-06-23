@@ -11,6 +11,7 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
+#include <algorithm>  // std::clamp
 #include <cmath>
 #include <cstdlib>
 
