@@ -1,0 +1,12 @@
+[submodule "vendor/mupen64plus-core"]
+	path = vendor/mupen64plus-core
+	url = https://github.com/RaYRoD-TV/mupen64plus-core.git
+[submodule "vendor/GLideN64"]
+	path = vendor/GLideN64
+	url = https://github.com/RaYRoD-TV/GLideN64.git
+[submodule "vendor/parallel-rdp-standalone"]
+	path = vendor/parallel-rdp-standalone
+	url = https://github.com/RaYRoD-TV/parallel-rdp-standalone.git
+[submodule "vendor/parallel-rsp"]
+	path = vendor/parallel-rsp
+	url = https://github.com/RaYRoD-TV/parallel-rsp.git

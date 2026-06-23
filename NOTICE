@@ -1,0 +1,32 @@
+CartridgeXR — an N64-in-VR experience
+Copyright (C) 2026 Ray Rod
+
+This is an UNOFFICIAL fork, not endorsed by:
+  - the Mupen64Plus team
+  - the GLideN64 maintainers (Sergey Lipskiy et al.)
+  - loganmc10 (simple64)
+
+Licensed under GPL-3.0-or-later. See LICENSE.
+
+Bundled components (full text under third_party_licenses/):
+  - Mupen64Plus core              GPL-2.0   github.com/mupen64plus/mupen64plus-core
+  - GLideN64 (modified)            GPL-2.0   github.com/gonetz/GLideN64
+  - parallel-rdp-standalone        MIT       github.com/Themaister/parallel-rdp-standalone
+  - parallel-rsp                   MIT       github.com/simple64/parallel-rsp
+  - Frontend code derived from    GPL-3.0   github.com/simple64/simple64-gui
+    simple64-gui (copy)
+  - Qt 6.7 LTS                     LGPL-3.0  dynamically linked
+  - OpenXR SDK (MIT option)        MIT       github.com/KhronosGroup/OpenXR-SDK
+  - Vulkan headers + loader        Apache-2.0
+  - Vulkan Memory Allocator        MIT
+  - glslang                        BSD-3 + Apache-2.0
+  - Steam Audio                    Apache-2.0
+  - libsamplerate                  BSD-2
+  - nlohmann/json                  MIT
+  - tinygltf                       MIT
+  - spdlog                         MIT
+  - fmt                            MIT
+  - zlib                           zlib
+
+Source: https://github.com/RaYRoD-TV/CartridgeXR
+Each binary release ships matching tagged source per GPLv3 §6.

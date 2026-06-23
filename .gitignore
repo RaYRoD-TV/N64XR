@@ -427,3 +427,28 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# === CartridgeXR additions ===
+
+# CMake build trees
+build/
+build-*/
+out/
+
+# vcpkg
+vcpkg_installed/
+CMakeUserPresets.json
+
+# IDE / tooling
+.cache/
+.vscode/
+compile_commands.json
+
+# Per-user assets not yet licensed for redistribution
+assets/_pending/
+
+# Local test ROMs (NEVER commit ROMs)
+*.n64
+*.v64
+*.z64
+*.rom
