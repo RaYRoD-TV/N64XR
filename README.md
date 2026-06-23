@@ -23,7 +23,7 @@ vendor/                      git submodules
   parallel-rdp-standalone/   MIT      reference LLE RDP (Vulkan)
   parallel-rsp/              MIT      RSP plugin
 src/
-  frontend/                  Qt6 GUI (copied/forked from simple64-gui)
+  frontend/                  Console smoke-test exe (no GUI deps); real launcher is the in-VR diegetic menu
   plugins/
     gfx-vr/                  OpenXR-backed graphics plugin
     audio-spatial/           Steam Audio-backed audio plugin
@@ -40,11 +40,12 @@ docs/                        plan, architecture, design notes
 
 Requires:
 - Visual Studio 2026 (or 2022 17.10+) — installer workload **Desktop development with C++**
-- Qt 6.7 LTS (MSVC 2022 64-bit) — only needed for the frontend target
 - Vulkan SDK 1.3.290+ (1.4.350 known-good)
-- vcpkg at `C:\vcpkg` (auto-detected by `CMAKE_TOOLCHAIN_FILE`)
+- vcpkg at `C:\vcpkg` (auto-detected by `CMAKE_TOOLCHAIN_FILE`); install: `vcpkg install --triplet x64-windows libsamplerate spdlog fmt nlohmann-json tinygltf glslang spirv-cross vulkan-memory-allocator vulkan-headers zlib`
 - OpenXR-SDK clone at `C:\dev\OpenXR-SDK` (override with `-DOPENXR_SDK_ROOT=...`)
 - Steam Audio SDK 4.8.1+ at `C:\SDK\steamaudio` (only needed when `N64XR_BUILD_AUDIO=ON`)
+
+No Qt, no third-party GUI account. The Phase 1 frontend is a console exe (`N64XR.exe`) that runs an OpenXR smoke test (clears magenta in both eyes for ~3s).
 
 ```
 git clone --recurse-submodules https://github.com/RaYRoD-TV/N64XR.git
@@ -54,7 +55,7 @@ cmake -B build -S . -G "Visual Studio 18 2026" -A x64 ^
 cmake --build build --config Release
 ```
 
-Substitute `-G "Visual Studio 17 2022"` if you're on VS 2022. To skip the Qt-dependent frontend (no Qt installed yet), add `-DN64XR_BUILD_FRONTEND=OFF` and `--target gfx_vr n64xr_vr_scene`.
+Substitute `-G "Visual Studio 17 2022"` if you're on VS 2022.
 
 ## License
 

@@ -23,7 +23,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 
 # --- Options -----------------------------------------------------------------
-option(N64XR_BUILD_FRONTEND  "Build the Qt6 frontend executable"           ON)
+option(N64XR_BUILD_FRONTEND  "Build the console smoke-test frontend executable" ON)
 option(N64XR_BUILD_GFX_VR    "Build the OpenXR-backed GFX plugin"          ON)
 option(N64XR_BUILD_AUDIO     "Build the Steam-Audio-backed audio plugin"   OFF) # Phase 1a workstream D
 option(N64XR_BUILD_INPUT     "Build the OpenXR motion-controller input plugin" OFF) # workstream E
@@ -42,11 +42,9 @@ find_package(glslang       CONFIG REQUIRED)
 find_package(SampleRate    CONFIG REQUIRED)
 find_package(ZLIB                 REQUIRED)
 
-# Qt is only needed for the frontend.
-if(N64XR_BUILD_FRONTEND)
-    find_package(Qt6 6.7 REQUIRED COMPONENTS Core Gui Widgets)
-    qt_standard_project_setup()
-endif()
+# Frontend is a console smoke-test exe (no GUI deps). The real launcher will be
+# the diegetic in-VR menu (Phase 1a workstream G); a desktop ROM browser can be
+# added later via Dear ImGui (vcpkg, MIT, no installer drama).
 
 # OpenXR lives at C:/dev/OpenXR-SDK (override with -DOPENXR_SDK_ROOT=...).
 find_package(OpenXR REQUIRED)
@@ -94,7 +92,7 @@ endif()
 # --- Status banner -----------------------------------------------------------
 message(STATUS "----------------------------------------------------------------")
 message(STATUS "N64XR ${N64XR_VERSION}")
-message(STATUS "  Frontend (Qt6):     ${N64XR_BUILD_FRONTEND}")
+message(STATUS "  Frontend (console): ${N64XR_BUILD_FRONTEND}")
 message(STATUS "  GFX-VR plugin:      ${N64XR_BUILD_GFX_VR}")
 message(STATUS "  Audio plugin:       ${N64XR_BUILD_AUDIO}")
 message(STATUS "  Input plugin:       ${N64XR_BUILD_INPUT}")
