@@ -1,48 +1,15 @@
-# N64XR — Font drop-zone
+# N64XR — Fonts
 
-The launcher's theme looks for these files in `assets/fonts/` next to the
-exe at runtime.  All three are **SIL OFL** licensed — ship them with the
-binary, no separate attribution screen needed beyond a `LICENSES.md` later.
+Three SIL OFL 1.1 typefaces, vendored in this directory. Shipped with the binary; no separate attribution screen needed beyond `LICENSES.md`.
 
-If any of these are missing the launcher will still boot — it falls back to
-the built-in ImGui ProggyClean font and logs a `warn`-level line per missing
-face.  But you won't get the golden-age-sci-fi look until they're in place.
+| Role | Family | Files | Upstream |
+|---|---|---|---|
+| Body / HUD | JetBrains Mono | `JetBrainsMono-Regular.ttf`, `JetBrainsMono-Medium.ttf` | [github.com/JetBrains/JetBrainsMono](https://github.com/JetBrains/JetBrainsMono) — release v2.304 |
+| Display / titling | Orbitron | `Orbitron-Regular.ttf`, `Orbitron-Bold.ttf` | [github.com/google/fonts/tree/main/ofl/orbitron](https://github.com/google/fonts/tree/main/ofl/orbitron) |
+| Phosphor status | VT323 | `VT323-Regular.ttf` | [github.com/google/fonts/tree/main/ofl/vt323](https://github.com/google/fonts/tree/main/ofl/vt323) |
 
-## TODO — download these in order (most important first)
+The root `CMakeLists.txt` mirrors `assets/` next to the frontend exe at build time (`n64xr_copy_assets` target), so the launcher finds them on first run.
 
-1. **JetBrains Mono — the body face** (highest priority; every menu line uses it)
-   - Download:  https://www.jetbrains.com/lp/mono/  →  click *Download font*
-   - From the zip, copy into `assets/fonts/`:
-     - `JetBrainsMono-Regular.ttf`
-     - `JetBrainsMono-Medium.ttf`  *(optional — unused today, reserved for emphasis)*
-   - License:  SIL OFL 1.1
+## Swapping a face
 
-2. **Orbitron — the display/titling face** (screen headers, hero button label, tab spine)
-   - Download:  https://fonts.google.com/specimen/Orbitron  →  *Get font* → *Download all*
-   - From the zip, copy into `assets/fonts/`:
-     - `Orbitron-Regular.ttf`
-     - `Orbitron-Bold.ttf`
-   - License:  SIL OFL 1.1
-
-3. **VT323 — the phosphor status face** (bottom status strip, "console readout" column)
-   - Download:  https://fonts.google.com/specimen/VT323  →  *Get font* → *Download all*
-   - From the zip, copy into `assets/fonts/`:
-     - `VT323-Regular.ttf`
-   - License:  SIL OFL 1.1
-
-## Final layout
-
-```
-assets/
-  fonts/
-    JetBrainsMono-Regular.ttf
-    JetBrainsMono-Medium.ttf      (optional)
-    Orbitron-Regular.ttf
-    Orbitron-Bold.ttf
-    VT323-Regular.ttf
-    README.md                     (this file)
-```
-
-The root `CMakeLists.txt` mirrors `assets/` next to the frontend exe at
-build time (`n64xr_copy_assets` target), so you only need to drop the
-files in once.
+Drop the replacement `.ttf` over the existing file (same filename). The launcher hot-resolves at startup; if a file is missing it logs a `warn` and falls back to ImGui's built-in ProggyClean for that slot. Mix-and-match within one OFL/permissive family is fine — re-attribute in `LICENSES.md` if you change upstream.
