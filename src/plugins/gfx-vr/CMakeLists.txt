@@ -3,7 +3,7 @@ add_library(gfx_vr SHARED
 )
 
 set_target_properties(gfx_vr PROPERTIES
-    OUTPUT_NAME "mupen64plus-video-cartridgexr"   # M64P frontends pick plugins by filename pattern
+    OUTPUT_NAME "mupen64plus-video-n64xr"   # M64P frontends pick plugins by filename pattern
     PREFIX ""                                     # no "lib" prefix on Windows
 )
 
@@ -15,7 +15,7 @@ target_include_directories(gfx_vr
 
 target_link_libraries(gfx_vr
     PRIVATE
-        CartridgeXR::Common
+        N64XR::Common
         Vulkan::Headers
         GPUOpen::VulkanMemoryAllocator
         OpenXR::Headers
@@ -27,7 +27,7 @@ target_compile_definitions(gfx_vr
         M64P_PLUGIN_PROTOTYPES=1
 )
 
-# Emit into bin/ alongside CartridgeXR.exe so the frontend can load it by relative path.
+# Emit into bin/ alongside N64XR.exe so the frontend can load it by relative path.
 set_target_properties(gfx_vr PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
 )

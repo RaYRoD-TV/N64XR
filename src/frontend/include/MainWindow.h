@@ -5,7 +5,7 @@
 class QLabel;
 class QPushButton;
 
-namespace cxr {
+namespace n64xr {
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -23,4 +23,4 @@ private:
     QString      m_currentRom;
 };
 
-}  // namespace cxr
+}  // namespace n64xr

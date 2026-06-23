@@ -1,4 +1,4 @@
-// CartridgeXR — gfx-vr plugin (Phase 1 scaffold)
+// N64XR — gfx-vr plugin (Phase 1 scaffold)
 //
 // Implements the Mupen64Plus video plugin C ABI as no-op stubs that log every
 // entry point. Loading this plugin into mupen64plus-core proves the ABI
@@ -56,9 +56,9 @@ EXPORT m64p_error CALL PluginGetVersion(m64p_plugin_type* PluginType,
                                         const char** PluginNamePtr,
                                         int* Capabilities) {
     if (PluginType)    *PluginType    = M64PLUGIN_GFX;
-    if (PluginVersion) *PluginVersion = 0x000001;    // CartridgeXR gfx-vr 0.0.1
+    if (PluginVersion) *PluginVersion = 0x000001;    // N64XR gfx-vr 0.0.1
     if (APIVersion)    *APIVersion    = 0x020200;    // Mupen64Plus video plugin ABI 2.2.0
-    if (PluginNamePtr) *PluginNamePtr = "CartridgeXR gfx-vr (Phase 1 scaffold)";
+    if (PluginNamePtr) *PluginNamePtr = "N64XR gfx-vr (Phase 1 scaffold)";
     if (Capabilities)  *Capabilities  = 0;
     return M64ERR_SUCCESS;
 }

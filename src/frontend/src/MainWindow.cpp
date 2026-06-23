@@ -13,12 +13,12 @@
 
 #include <spdlog/spdlog.h>
 
-namespace cxr {
+namespace n64xr {
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
 {
-    setWindowTitle("CartridgeXR — Phase 1 scaffold");
+    setWindowTitle("N64 XR — Phase 1 scaffold");
     resize(540, 220);
 
     auto* central = new QWidget(this);
@@ -27,7 +27,7 @@ MainWindow::MainWindow(QWidget* parent)
     layout->setSpacing(14);
 
     auto* title = new QLabel(
-        "<h2 style='margin:0'>CartridgeXR</h2>"
+        "<h2 style='margin:0'>N64 XR</h2>"
         "<p style='color:#888;margin:0'>Standalone OpenXR-backed VR fork of simple64 + GLideN64.</p>",
         central);
     title->setTextFormat(Qt::RichText);
@@ -67,7 +67,7 @@ void MainWindow::onLaunchVr() {
     XrSession session;
     if (!session.initialize()) {
         m_status->setText(tr("XR initialise FAILED — see log."));
-        QMessageBox::critical(this, tr("CartridgeXR"),
+        QMessageBox::critical(this, tr("N64 XR"),
             tr("OpenXR failed to initialise. Make sure a runtime (SteamVR or Oculus PC) is set as the active OpenXR runtime."));
         return;
     }
@@ -83,4 +83,4 @@ void MainWindow::onLaunchVr() {
     m_status->setText(tr("Smoke test done — magenta cleared in both eyes for ~3 seconds."));
 }
 
-}  // namespace cxr
+}  // namespace n64xr

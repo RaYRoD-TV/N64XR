@@ -1,4 +1,4 @@
-CartridgeXR — an N64-in-VR experience
+N64 XR — an N64-in-VR experience
 Copyright (C) 2026 Ray Rod
 
 This is an UNOFFICIAL fork, not endorsed by:
@@ -28,5 +28,5 @@ Bundled components (full text under third_party_licenses/):
   - fmt                            MIT
   - zlib                           zlib
 
-Source: https://github.com/RaYRoD-TV/CartridgeXR
+Source: https://github.com/RaYRoD-TV/N64XR
 Each binary release ships matching tagged source per GPLv3 §6.

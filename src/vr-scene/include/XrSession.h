@@ -15,7 +15,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace cxr {
+namespace n64xr {
 
 class XrSession {
 public:
@@ -75,4 +75,4 @@ private:
     std::vector<XrViewConfigurationView> m_viewConfigs;
 };
 
-}  // namespace cxr
+}  // namespace n64xr

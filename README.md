@@ -1,4 +1,4 @@
-# CartridgeXR
+# N64 XR
 
 Standalone OpenXR-backed VR fork of [simple64](https://github.com/simple64/simple64) + [GLideN64](https://github.com/gonetz/GLideN64). Brings Nintendo 64 emulation to the headset.
 
@@ -44,11 +44,11 @@ Requires:
 - Vulkan SDK 1.3.290+
 - vcpkg at `C:\vcpkg` (auto-detected by `CMAKE_TOOLCHAIN_FILE`)
 - OpenXR-SDK clone at `C:\dev\OpenXR-SDK` (override with `-DOPENXR_SDK_ROOT=...`)
-- Steam Audio SDK 4.8.1+ at `C:\SDK\steamaudio` (only needed when `CARTRIDGEXR_BUILD_AUDIO=ON`)
+- Steam Audio SDK 4.8.1+ at `C:\SDK\steamaudio` (only needed when `N64XR_BUILD_AUDIO=ON`)
 
 ```
-git clone --recurse-submodules https://github.com/RaYRoD-TV/CartridgeXR.git
-cd CartridgeXR
+git clone --recurse-submodules https://github.com/RaYRoD-TV/N64XR.git
+cd N64XR
 cmake -B build -S . -G "Visual Studio 17 2022" -A x64 ^
       -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
 cmake --build build --config Release

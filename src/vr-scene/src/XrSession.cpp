@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-namespace cxr {
+namespace n64xr {
 namespace {
 
 constexpr XrViewConfigurationType kViewConfig = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
@@ -41,9 +41,9 @@ bool XrSession::createXrInstance() {
     };
 
     XrInstanceCreateInfo create{XR_TYPE_INSTANCE_CREATE_INFO};
-    std::strncpy(create.applicationInfo.applicationName, "CartridgeXR", XR_MAX_APPLICATION_NAME_SIZE - 1);
+    std::strncpy(create.applicationInfo.applicationName, "N64XR", XR_MAX_APPLICATION_NAME_SIZE - 1);
     create.applicationInfo.applicationVersion = 1;
-    std::strncpy(create.applicationInfo.engineName, "CartridgeXR vr-scene", XR_MAX_ENGINE_NAME_SIZE - 1);
+    std::strncpy(create.applicationInfo.engineName, "N64XR vr-scene", XR_MAX_ENGINE_NAME_SIZE - 1);
     create.applicationInfo.engineVersion = 1;
     create.applicationInfo.apiVersion    = XR_CURRENT_API_VERSION;
     create.enabledExtensionCount         = static_cast<uint32_t>(extensions.size());
@@ -88,9 +88,9 @@ bool XrSession::createVulkanDeviceForXr() {
     if (!xr_check(pfnGetReqs(m_instance, m_systemId, &reqs), "xrGetVulkanGraphicsRequirements2KHR")) return false;
 
     VkApplicationInfo appInfo{VK_STRUCTURE_TYPE_APPLICATION_INFO};
-    appInfo.pApplicationName   = "CartridgeXR";
+    appInfo.pApplicationName   = "N64XR";
     appInfo.applicationVersion = VK_MAKE_VERSION(0, 0, 1);
-    appInfo.pEngineName        = "CartridgeXR";
+    appInfo.pEngineName        = "N64XR";
     appInfo.engineVersion      = VK_MAKE_VERSION(0, 0, 1);
     appInfo.apiVersion         = VK_API_VERSION_1_3;
 
@@ -426,4 +426,4 @@ void XrSession::shutdown() {
     if (m_vkInstance    != VK_NULL_HANDLE) { vkDestroyInstance(m_vkInstance, nullptr);                   m_vkInstance    = VK_NULL_HANDLE; }
 }
 
-}  // namespace cxr
+}  // namespace n64xr

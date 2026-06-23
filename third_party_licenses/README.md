@@ -1,6 +1,6 @@
 # Third-Party Licenses
 
-Each bundled component's full license text lives under this directory. CartridgeXR is GPL-3.0-or-later (see `../LICENSE`); the components keep their original terms.
+Each bundled component's full license text lives under this directory. N64XR is GPL-3.0-or-later (see `../LICENSE`); the components keep their original terms.
 
 ## Component → license file mapping
 
@@ -26,11 +26,11 @@ Each bundled component's full license text lives under this directory. Cartridge
 
 ## How the build keeps this current
 
-A CMake target `cartridgexr_collect_licenses` copies the source-of-truth license files from the submodules and the local SDK installs into this directory at configure time, so every binary release ships a self-contained `third_party_licenses/` folder. (Target lands with the build-system commit; pending for now.)
+A CMake target `n64xr_collect_licenses` copies the source-of-truth license files from the submodules and the local SDK installs into this directory at configure time, so every binary release ships a self-contained `third_party_licenses/` folder. (Target lands with the build-system commit; pending for now.)
 
 ## Adding a new dependency
 
 1. Check the license is GPL-3.0-compatible. **Never bundle Meta XR Audio SDK or any "non-commercial" / EULA-encumbered library.**
 2. Add an entry to the table above with link to upstream LICENSE.
-3. Wire it into `cartridgexr_collect_licenses` in `cmake/CollectLicenses.cmake`.
+3. Wire it into `n64xr_collect_licenses` in `cmake/CollectLicenses.cmake`.
 4. Update root `NOTICE` with a one-line attribution.
