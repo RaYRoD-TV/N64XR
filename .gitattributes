@@ -1,0 +1,76 @@
+# N64XR — git line-ending + binary-mode rules.
+# Apply universally so Windows + Linux contributors get the same checkout.
+
+# Default: auto-detect text, normalise to LF in the repo.
+* text=auto eol=lf
+
+# Source files explicitly text + LF.
+*.c       text eol=lf
+*.h       text eol=lf
+*.cpp     text eol=lf
+*.hpp     text eol=lf
+*.cc      text eol=lf
+*.cmake   text eol=lf
+CMakeLists.txt text eol=lf
+*.md      text eol=lf
+*.json    text eol=lf
+*.yml     text eol=lf
+*.yaml    text eol=lf
+*.toml    text eol=lf
+*.glsl    text eol=lf
+*.hlsl    text eol=lf
+*.vert    text eol=lf
+*.frag    text eol=lf
+*.comp    text eol=lf
+
+# Windows scripts keep CRLF.
+*.bat     text eol=crlf
+*.cmd     text eol=crlf
+*.ps1     text eol=crlf
+
+# BINARY assets — never touch.
+*.ttf     binary
+*.otf     binary
+*.woff    binary
+*.woff2   binary
+*.png     binary
+*.jpg     binary
+*.jpeg    binary
+*.gif     binary
+*.webp    binary
+*.ico     binary
+*.icns    binary
+*.dds     binary
+*.ktx     binary
+*.ktx2    binary
+*.exr     binary
+*.hdr     binary
+*.gltf    binary
+*.glb     binary
+*.fbx     binary
+*.obj     binary
+*.mtl     binary
+*.usd     binary
+*.usda    binary
+*.usdc    binary
+*.usdz    binary
+*.wav     binary
+*.mp3     binary
+*.ogg     binary
+*.flac    binary
+*.spv     binary
+*.vdb     binary
+*.dll     binary
+*.lib     binary
+*.exe     binary
+*.pdb     binary
+*.zip     binary
+*.7z      binary
+*.tar.gz  binary
+
+# ROM extensions — should never be committed at all (also in .gitignore),
+# but mark binary just in case someone slips past the ignore.
+*.n64     binary
+*.v64     binary
+*.z64     binary
+*.rom     binary
