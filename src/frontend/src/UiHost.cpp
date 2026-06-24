@@ -543,7 +543,12 @@ void UiHost::Impl::composeFrame(UiHost& outer) {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0,0));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    // TRANSPARENT root background — the HoloStage composite (space + 3D
+    // cartridge, drawn into the swapchain before ImGui) must show through the
+    // centre. An opaque WindowBg here occludes the whole hologram.
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0,0,0,0));
     ImGui::Begin("##n64xr_root", nullptr, rootFlags);
+    ImGui::PopStyleColor();
     ImGui::PopStyleVar(3);
 
     // ---- Alive-idle bed (drawn UNDER everything) --------------------------
