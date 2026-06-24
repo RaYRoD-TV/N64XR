@@ -66,23 +66,31 @@ void BuildCartridge(std::vector<Vertex>& outVerts,
     outIndices.clear();
     Builder b{ outVerts, outIndices };
 
-    // --- Canonical proportions (width = 1.0) ---
-    const float W = 0.75f, H = 1.0f, D = 0.15f;   // portrait, like a real N64 cart
+    // --- Portrait proportions, like a real N64 cart ---
+    const float W = 0.75f, H = 1.0f, D = 0.15f;
     const float hw = W * 0.5f, hh = H * 0.5f, hd = D * 0.5f;
-    const float cham  = 0.085f * H;   // top-corner chamfer (exaggerated)
     const float taper = 0.035f * W;   // per-side bottom inset
+    const float br    = 0.03f;        // bottom corner round
+    const float sY    = 0.26f;        // shoulder height (top of the vertical sides)
 
-    // 8-point front outline (XY plane), CCW: tapered bottom, chamfered top.
+    // N64 silhouette (XY plane), CCW: flat bottom, vertical sides, rounded
+    // shoulders rising to a wide gently-domed CROWN — the signature top.
     struct V2 { float x, y; };
-    const std::array<V2, 8> o = { {
-        { -hw + taper, -hh        },   // 0 bottom-left
-        {  hw - taper, -hh        },   // 1 bottom-right
-        {  hw,         -hh + cham },   // 2 right-lower
-        {  hw,          hh - cham },   // 3 right-upper
-        {  hw - cham,   hh        },   // 4 top-right (chamfer)
-        { -hw + cham,   hh        },   // 5 top-left  (chamfer)
-        { -hw,          hh - cham },   // 6 left-upper
-        { -hw,         -hh + cham },   // 7 left-lower
+    const std::array<V2, 14> o = { {
+        { -hw + taper, -hh           },  //  0 bottom-left
+        {  hw - taper, -hh           },  //  1 bottom-right
+        {  hw,         -hh + br       },  //  2 bottom-right round
+        {  hw,          sY            },  //  3 right side -> shoulder
+        {  hw - 0.015f, sY + 0.07f    },  //  4 shoulder curve
+        {  hw - 0.060f, hh - 0.050f   },  //  5 upper-right corner curve
+        {  hw - 0.130f, hh - 0.005f   },  //  6 crown start (right)
+        {  0.105f,      hh            },  //  7 crown right
+        { -0.105f,      hh            },  //  8 crown left
+        { -hw + 0.130f, hh - 0.005f   },  //  9 crown start (left)
+        { -hw + 0.060f, hh - 0.050f   },  // 10 upper-left corner curve
+        { -hw + 0.015f, sY + 0.07f    },  // 11 shoulder curve
+        { -hw,          sY            },  // 12 left side
+        { -hw,         -hh + br       },  // 13 left side bottom round
     } };
 
     // ---- Pass 1: side wall ring (front z=+hd .. back z=-hd) ----
@@ -105,54 +113,31 @@ void BuildCartridge(std::vector<Vertex>& outVerts,
         }
     }
 
-    // ---- Pass 2: FRONT face = frame ring around a recessed label panel ----
-    const float labMx  = 0.10f * W;     // side margin
-    const float labTop = 0.07f * H;     // gap from top edge
-    const float labBot = 0.42f * H;     // label occupies upper band
-    const float labDep = 0.34f * D;     // recess depth
-    const float lx0 = -hw + labMx, lx1 = hw - labMx;
-    const float ly0 = hh - labBot, ly1 = hh - labTop;   // ly0 < ly1
-
-    // Frame ring: front face minus the label rectangle. Triangulate as a fan
-    // of quads from each outline edge to the nearest label-rect corner band.
-    // Simpler + robust: build the frame as 4 border quads around the rect,
-    // clipped to the outline's bounding interior. For a clean wireframe we use
-    // the rectangle inset and connect to the outline with a triangle fan that
-    // respects the chamfers.
+    // ---- Front cap (fan, normal +Z) — clean outline edge only ----
     {
-        // Front outer fan to label-rect: emit a ring of quads.
-        // Label rect corners (front plane).
-        const Vec3 r00 = P(lx0, ly0, +hd);
-        const Vec3 r10 = P(lx1, ly0, +hd);
-        const Vec3 r11 = P(lx1, ly1, +hd);
-        const Vec3 r01 = P(lx0, ly1, +hd);
+        const Vec3 cenF = P(0.0f, 0.0f, +hd);
+        for (size_t i = 0; i < o.size(); ++i) {
+            const V2 p0 = o[i];
+            const V2 p1 = o[(i + 1) % o.size()];
+            b.fanTri(cenF, P(p0.x, p0.y, +hd), P(p1.x, p1.y, +hd));
+        }
+    }
 
-        // Connect each outline vertex to the closest rect corner, building a
-        // closed frame. We pair outline edges with rect edges quadrant-wise.
-        // Bottom border (outline pts 0,1 -> r00,r10)
-        b.quad(P(o[0].x, o[0].y, +hd), P(o[1].x, o[1].y, +hd), r10, r00);
-        // Right border (outline pts 1,2,3,4 -> r10,r11)
-        b.tri(P(o[1].x, o[1].y, +hd), P(o[2].x, o[2].y, +hd), r10);
-        b.tri(P(o[2].x, o[2].y, +hd), P(o[3].x, o[3].y, +hd), r10);
-        b.tri(P(o[3].x, o[3].y, +hd), r11, r10);
-        b.tri(P(o[3].x, o[3].y, +hd), P(o[4].x, o[4].y, +hd), r11);
-        // Top border (outline pts 4,5 -> r11,r01)
-        b.quad(P(o[4].x, o[4].y, +hd), r11, r01, P(o[5].x, o[5].y, +hd));
-        // Left border (outline pts 5,6,7,0 -> r01,r00)
-        b.tri(P(o[5].x, o[5].y, +hd), r01, P(o[6].x, o[6].y, +hd));
-        b.tri(P(o[6].x, o[6].y, +hd), r01, r00);
-        b.tri(P(o[6].x, o[6].y, +hd), r00, P(o[7].x, o[7].y, +hd));
-        b.tri(P(o[7].x, o[7].y, +hd), r00, P(o[0].x, o[0].y, +hd));
-
-        // Recessed label panel (pushed back) + its 4 side walls.
-        const float zr = +hd - labDep;
-        // panel face (normal +Z)
+    // ---- Recessed square label, upper-centre (the classic N64 label well) ----
+    {
+        const float lhw = 0.205f, lcy = 0.135f, lhh = 0.195f;
+        const float labDep = 0.045f;
+        const float lx0 = -lhw, lx1 = lhw, ly0 = lcy - lhh, ly1 = lcy + lhh;
+        const float zr  = +hd - labDep;
+        const Vec3 r00 = P(lx0, ly0, +hd), r10 = P(lx1, ly0, +hd);
+        const Vec3 r11 = P(lx1, ly1, +hd), r01 = P(lx0, ly1, +hd);
+        // recessed panel (normal +Z)
         b.quad(P(lx0, ly0, zr), P(lx1, ly0, zr), P(lx1, ly1, zr), P(lx0, ly1, zr));
-        // four inset walls (front rim -> recessed rim)
-        b.quad(P(lx0, ly0, +hd), P(lx1, ly0, +hd), P(lx1, ly0, zr), P(lx0, ly0, zr)); // bottom
-        b.quad(P(lx1, ly0, +hd), P(lx1, ly1, +hd), P(lx1, ly1, zr), P(lx1, ly0, zr)); // right
-        b.quad(P(lx1, ly1, +hd), P(lx0, ly1, +hd), P(lx0, ly1, zr), P(lx1, ly1, zr)); // top
-        b.quad(P(lx0, ly1, +hd), P(lx0, ly0, +hd), P(lx0, ly0, zr), P(lx0, ly1, zr)); // left
+        // four inset walls — their front rim draws the crisp label border
+        b.quad(r00, r10, P(lx1, ly0, zr), P(lx0, ly0, zr)); // bottom
+        b.quad(r10, r11, P(lx1, ly1, zr), P(lx1, ly0, zr)); // right
+        b.quad(r11, r01, P(lx0, ly1, zr), P(lx1, ly1, zr)); // top
+        b.quad(r01, r00, P(lx0, ly0, zr), P(lx0, ly1, zr)); // left
     }
 
     // ---- Pass 3: BACK finger-grip ridges (V-grooves across lower-rear) ----
