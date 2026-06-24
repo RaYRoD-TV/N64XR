@@ -562,6 +562,13 @@ void UiHost::Impl::composeFrame(UiHost& outer) {
                         aliveState, outer.m_state.showScanlines);
     }
 
+    // ---- ROM scan runs globally so the Home carousel is populated even
+    //      before the Cartridge Vault is opened. ------------------------------
+    if (outer.m_state.needsRescan) {
+        ScanRoms(outer.m_state);
+        outer.m_state.needsRescan = false;
+    }
+
     // ---- Active screen (each screen owns its own layout / chrome) ---------
     switch (outer.m_state.currentScreen) {
         case Screen::Home:           DrawHomeScreen       (outer.m_state); break;

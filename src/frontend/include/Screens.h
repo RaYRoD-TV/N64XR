@@ -15,6 +15,10 @@ void DrawHomeScreen       (AppState& state);
 void DrawRomBrowserScreen (AppState& state);   // "Cartridge Vault"
 void DrawSettingsScreen   (AppState& state);   // "Service Hatch"
 
+// Scan AppState::romScanPath into AppState::roms (also persists the path).
+// Callable from any screen / startup so the home carousel populates.
+void ScanRoms(AppState& state);
+
 // Shared helper: the breathing primary-action button. Returns true on click.
 bool BreathingButton(const char* label, float widthScale = 1.0f);
 

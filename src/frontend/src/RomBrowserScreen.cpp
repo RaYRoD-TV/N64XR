@@ -31,7 +31,7 @@ static bool IsCartridgeFile(const fs::path& p) {
     return ext == ".n64" || ext == ".v64" || ext == ".z64";
 }
 
-static void Rescan(AppState& s) {
+void ScanRoms(AppState& s) {
     s.roms.clear();
     fs::path root(s.romScanPath);
     if (!fs::exists(root) || !fs::is_directory(root)) {
@@ -58,6 +58,9 @@ static void Rescan(AppState& s) {
               [](const RomEntry& a, const RomEntry& b) {
                   return a.displayName < b.displayName;
               });
+    // Give the carousel a valid centre selection.
+    if (!s.roms.empty() && (s.selectedRom < 0 || s.selectedRom >= (int)s.roms.size()))
+        s.selectedRom = 0;
     s.statusLine = std::string("Vault holds ") + std::to_string(s.roms.size())
                  + " cartridge" + (s.roms.size() == 1 ? "" : "s") + ".";
     spdlog::info("Cartridge Vault scan: {} files under '{}'.",
@@ -81,7 +84,7 @@ static std::string PrettySize(std::uintmax_t b) {
 }
 
 void DrawRomBrowserScreen(AppState& state) {
-    if (state.needsRescan) { Rescan(state); state.needsRescan = false; }
+    if (state.needsRescan) { ScanRoms(state); state.needsRescan = false; }
 
     auto& pal  = theme::Colours();
     ImFont* dF = theme::GetFonts().display ? theme::GetFonts().display : ImGui::GetFont();

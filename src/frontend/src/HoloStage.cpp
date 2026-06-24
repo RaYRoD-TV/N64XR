@@ -772,7 +772,7 @@ void HoloStage::renderOffscreen(VkCommandBuffer cmd, float timeSeconds,
 
         Mat4 model = mul(rotateY(yaw + tiltY), rotateX(tiltX));
 
-        const Vec3 eye{ 0.0f, 0.05f, 2.95f };   // pulled back — jewel-like, not frame-filling
+        const Vec3 eye{ 0.0f, 0.04f, 5.40f };   // far back — a small featured centre cartridge, not frame-filling
         const Vec3 center{ 0.0f, 0.0f, 0.0f };
         const Vec3 up{ 0.0f, 1.0f, 0.0f };
         Mat4 view = lookAt(eye, center, up);
