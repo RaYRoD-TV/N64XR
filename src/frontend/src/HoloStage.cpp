@@ -820,7 +820,7 @@ void HoloStage::renderOffscreen(VkCommandBuffer cmd, float timeSeconds,
         VkDeviceSize off = 0;
         vkCmdBindVertexBuffers(cmd, 0, 1, &m_vbuf, &off);
         vkCmdBindIndexBuffer(cmd, m_ibuf, 0, VK_INDEX_TYPE_UINT32);
-        vkCmdDrawIndexed(cmd, m_indexCount, 1, 0, 0, 0);
+        if (m_drawCart) vkCmdDrawIndexed(cmd, m_indexCount, 1, 0, 0, 0);
         vkCmdEndRenderPass(cmd);
     }
 

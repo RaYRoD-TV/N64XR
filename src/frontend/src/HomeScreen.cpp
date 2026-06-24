@@ -162,14 +162,9 @@ void DrawHomeScreen(AppState& state) {
     const float top     = origin.y + 14.0f;
     const float bottom  = origin.y + H;
 
-    // ===================== BACKGROUND: perspective grid =====================
-    {
-        const float gridTop = top + 150.0f;
-        const float gridH   = bottom - gridTop;
-        const float scrollT = std::fmod(t * 0.10f, 1.0f);
-        icons::PerspectiveGrid(dl, ImVec2(left, gridTop), right - left, gridH,
-                               U32a(pal.cyanDim, 0.28f), scrollT);
-    }
+    // The room interior (floor / walls / back, perspective grid) is now drawn
+    // by the composite shader behind ImGui — no ImGui-drawn grid here (it
+    // conflicted as stray diagonals over the shader room).
 
     // ===================== TOP: title lockup + VR badge =====================
     ImFont* disp  = fonts.display ? fonts.display : ImGui::GetFont();

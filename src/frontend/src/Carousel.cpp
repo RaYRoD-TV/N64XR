@@ -10,6 +10,7 @@
 #include "Carousel.h"
 #include "AppState.h"
 #include "Theme.h"
+#include "ArtCache.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -60,14 +61,14 @@ void TextFit(ImDrawList* dl, ImFont* f, float px, float cx, float y,
 }
 
 void DrawCard(ImDrawList* dl, ImVec2 p0, ImVec2 p1, float scale, float alpha,
-              bool hero, bool transparentBody, const char* title,
+              bool hero, const char* title, ImTextureID art, float artAspect,
               ImFont* font, const theme::Palette& pal) {
     const float W = p1.x - p0.x, H = p1.y - p0.y;
     const float rTop = W * 0.32f, rBot = W * 0.07f;
     auto Acol = [&](ImU32 rgb, float a){ return WithA(rgb, ImClamp(a * alpha, 0.0f, 1.0f)); };
     const ImU32 cyan = U32(pal.cyan), cyanDim = U32(pal.cyanDim);
 
-    // floor shadow ellipse-ish
+    // floor shadow
     {
         float sw = W * 0.40f;
         ImVec2 sc((p0.x + p1.x) * 0.5f, p1.y + 6.0f * scale);
@@ -75,49 +76,52 @@ void DrawCard(ImDrawList* dl, ImVec2 p0, ImVec2 p1, float scale, float alpha,
                           WithA(IM_COL32(0,0,0,255), 0.35f * alpha), 8.0f * scale);
     }
 
-    // outer glow (cartridge-shaped)
-    for (int g = 4; g >= 1; --g) {
+    // outer glow (only the hero glows strongly — keeps the row calm)
+    int glowN = hero ? 4 : 2;
+    for (int g = glowN; g >= 1; --g) {
         float e = g * 2.5f * scale;
         CartridgePath(dl, ImVec2(p0.x - e, p0.y - e), ImVec2(p1.x + e, p1.y + e), rTop + e, rBot + e);
-        dl->AddPolyline(dl->_Path.Data, dl->_Path.Size, Acol(cyan, 0.10f / g), ImDrawFlags_Closed, 2.0f);
+        dl->AddPolyline(dl->_Path.Data, dl->_Path.Size, Acol(cyan, 0.09f / g), ImDrawFlags_Closed, 2.0f);
         dl->PathClear();
     }
 
-    // body
+    // body (dark cartridge plastic) + cyan edge
     CartridgePath(dl, p0, p1, rTop, rBot);
-    if (!transparentBody)
-        dl->AddConvexPolyFilled(dl->_Path.Data, dl->_Path.Size,
-                                WithA(IM_COL32(10, 20, 32, 255), 0.95f * alpha));
-    dl->AddPolyline(dl->_Path.Data, dl->_Path.Size, Acol(cyan, 1.0f),
+    dl->AddConvexPolyFilled(dl->_Path.Data, dl->_Path.Size,
+                            WithA(IM_COL32(12, 22, 34, 255), 0.97f * alpha));
+    dl->AddPolyline(dl->_Path.Data, dl->_Path.Size, Acol(cyan, hero ? 1.0f : 0.7f),
                     ImDrawFlags_Closed, ImMax(1.8f * scale, 1.1f));
     dl->PathClear();
 
-    // label / art well (recessed front panel) — square-ish, upper-centre
-    ImVec2 lab0(p0.x + W * 0.13f, p0.y + H * 0.13f);
-    ImVec2 lab1(p1.x - W * 0.13f, p0.y + H * 0.62f);
-    if (!transparentBody) {
-        dl->AddRectFilled(lab0, lab1, WithA(IM_COL32(5, 12, 21, 255), 0.92f * alpha), 4.0f * scale);
-        // faint inner sheen
-        dl->AddRectFilledMultiColor(lab0, ImVec2(lab1.x, ImLerp(lab0.y, lab1.y, 0.4f)),
-            Acol(IM_COL32(150, 240, 255, 255), 0.10f), Acol(IM_COL32(150, 240, 255, 255), 0.10f),
-            WithA(cyan, 0.0f), WithA(cyan, 0.0f));
-    }
-    dl->AddRect(lab0, lab1, Acol(cyanDim, 0.9f), 4.0f * scale, 0, 1.0f);
+    // label / art well — large square-ish front panel
+    ImVec2 lab0(p0.x + W * 0.11f, p0.y + H * 0.11f);
+    ImVec2 lab1(p1.x - W * 0.11f, p0.y + H * 0.72f);
+    dl->AddRectFilled(lab0, lab1, WithA(IM_COL32(5, 12, 21, 255), 0.95f * alpha), 3.0f * scale);
 
-    // game name, inside the label, ellipsised (no more cut-off mid-word)
-    if (title && title[0]) {
-        const float px = font->LegacySize * (hero ? 0.62f : 0.50f);
+    if (art) {
+        // fit the cover preserving aspect, centred in the well
+        const float wW = lab1.x - lab0.x, wH = lab1.y - lab0.y;
+        const float a  = (artAspect > 0.01f) ? artAspect : (wW / wH);
+        float fitW = wW, fitH = wW / a;
+        if (fitH > wH) { fitH = wH; fitW = wH * a; }
+        const ImVec2 c((lab0.x + lab1.x) * 0.5f, (lab0.y + lab1.y) * 0.5f);
+        dl->AddImage(art, ImVec2(c.x - fitW * 0.5f, c.y - fitH * 0.5f),
+                          ImVec2(c.x + fitW * 0.5f, c.y + fitH * 0.5f),
+                     ImVec2(0, 0), ImVec2(1, 1), WithA(IM_COL32(255,255,255,255), alpha));
+    } else if (title && title[0]) {
+        const float px = font->LegacySize * (hero ? 0.58f : 0.48f);
         const float cx = (lab0.x + lab1.x) * 0.5f;
         const float maxW = (lab1.x - lab0.x) - 8.0f * scale;
         TextFit(dl, font, px, cx, (lab0.y + lab1.y) * 0.5f - px * 0.5f,
                 Acol(IM_COL32(210, 250, 255, 255), 1.0f), title, maxW);
     }
+    dl->AddRect(lab0, lab1, Acol(cyanDim, 0.85f), 3.0f * scale, 0, 1.0f);
 
     // lower grip ridges
     for (int i = 0; i < 4; ++i) {
-        float y = ImLerp(p0.y, p1.y, 0.72f + i * 0.055f);
-        dl->AddLine(ImVec2(p0.x + W * 0.20f, y), ImVec2(p1.x - W * 0.20f, y),
-                    Acol(cyanDim, 0.45f), 1.0f);
+        float y = ImLerp(p0.y, p1.y, 0.76f + i * 0.05f);
+        dl->AddLine(ImVec2(p0.x + W * 0.22f, y), ImVec2(p1.x - W * 0.22f, y),
+                    Acol(cyanDim, 0.40f), 1.0f);
     }
 }
 
@@ -137,7 +141,7 @@ bool DrawCarousel(AppState& state, ImVec2 a, ImVec2 b, float time) {
         const float cardW = 168.0f, cardH = 232.0f;
         ImVec2 p0(center.x - cardW * 0.5f, center.y - cardH * 0.5f);
         ImVec2 p1(p0.x + cardW, p0.y + cardH);
-        DrawCard(dl, p0, p1, 1.0f, 0.55f, true, true, "EMPTY SLOT", font, pal);
+        DrawCard(dl, p0, p1, 1.0f, 0.55f, true, "EMPTY SLOT", 0, 0.0f, font, pal);
         return false;
     }
 
@@ -181,8 +185,11 @@ bool DrawCarousel(AppState& state, ImVec2 a, ImVec2 b, float time) {
         ImVec2 p0(x - cardW * 0.5f, center.y - cardH * 0.5f + lift);
         ImVec2 p1(p0.x + cardW, p0.y + cardH);
         const bool hero = (idx == state.selectedRom);
-        DrawCard(dl, p0, p1, scale, alpha, hero, hero,
-                 state.roms[idx].displayName.c_str(), font, pal);
+        int aw = 0, ah = 0;
+        ImTextureID art = Art().get(state.roms[idx].displayName, &aw, &ah);
+        const float aspect = (ah > 0) ? float(aw) / float(ah) : 0.0f;
+        DrawCard(dl, p0, p1, scale, alpha, hero,
+                 state.roms[idx].displayName.c_str(), art, aspect, font, pal);
         ImGui::SetCursorScreenPos(p0);
         ImGui::PushID(idx);
         if (ImGui::InvisibleButton("card", ImVec2(cardW, cardH))) {

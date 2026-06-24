@@ -63,7 +63,13 @@ public:
 
     bool initialised() const { return m_device != VK_NULL_HANDLE; }
 
+    // Toggle the 3D cartridge draw (room background still renders). Off on the
+    // home screen so the box-art coverflow is the hero; reserved for VR/detail.
+    void setCartridgeEnabled(bool e) { m_drawCart = e; }
+
 private:
+    bool m_drawCart = true;
+
     // -------- small owned-image helper --------
     struct Image {
         VkImage        image  = VK_NULL_HANDLE;

@@ -24,6 +24,7 @@
 #include "HoloStage.h"
 #include "SettingsStore.h"
 #include "BottomNav.h"
+#include "ArtCache.h"
 
 // GLFW_INCLUDE_VULKAN is set as a frontend compile def (see src/frontend/CMakeLists.txt)
 // so glfw3.h pulls in vulkan.h automatically — don't redefine here.
@@ -199,9 +200,18 @@ int UiHost::run(int /*argc*/, char** /*argv*/) {
         m_impl->scFormat, m_impl->renderPass, "assets/shaders");
     m_impl->holoReady = true;
 
+    // Local cover/cartridge art loader (uses the ImGui Vulkan backend).
+    Art().init(m_impl->physical, m_impl->device, m_impl->gfxQueue,
+               m_impl->gfxFamily, m_impl->cmdPool);
+
+    // Home screen uses the box-art coverflow as the hero; keep the room but
+    // hide the 3D cartridge (reserved for a detail / in-VR view).
+    m_impl->holo.setCartridgeEnabled(false);
+
     // Restore persisted settings (ROM scan path, view toggles) before the
     // first frame; flag a rescan so the loaded path populates the vault.
     LoadSettings(m_state);
+    Art().setRoots(m_state.romScanPath);
     m_state.needsRescan = true;
 
     // Friendly first status line.
@@ -677,6 +687,7 @@ void UiHost::Impl::shutdown() {
     if (device) vkDeviceWaitIdle(device);
 
     if (holoReady) { holo.shutdown(); holoReady = false; }
+    Art().shutdown();   // free art textures while the ImGui Vulkan backend is still up
 
     if (ImGui::GetCurrentContext()) {
         ImGui_ImplVulkan_Shutdown();

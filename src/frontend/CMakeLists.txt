@@ -21,6 +21,7 @@ add_executable(n64xr_frontend
     src/Icons.cpp
     src/Carousel.cpp
     src/BottomNav.cpp
+    src/ArtCache.cpp
 )
 
 add_executable(N64XR::Frontend ALIAS n64xr_frontend)

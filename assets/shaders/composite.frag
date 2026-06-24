@@ -59,19 +59,19 @@ void main() {
     vec2  g     = tang / cell;
     vec2  gd    = abs(fract(g) - 0.5);
     vec2  gwid  = fwidth(g);
-    vec2  lines = smoothstep(vec2(0.5), vec2(0.5) - gwid * 2.2, gd);
+    vec2  lines = smoothstep(vec2(0.5), vec2(0.5) - gwid * 1.0, gd); // THIN lines
     float grid  = max(lines.x, lines.y);
 
-    // ---- shade the room ----
-    float fade = exp(-te * 0.165);                 // farther walls dim -> depth
-    vec3  room = vec3(0.008, 0.024, 0.045);        // dark wall base
-    room += CYAN * grid * fade * 0.95;             // glowing grid lines
-    room += CYAN * 0.035 * fade;                   // faint wall ambient
-    room += CYAN * smoothstep(0.55, 0.0, length(ndc)) * 0.09; // back vanishing glow
+    // ---- shade the room: near-black walls, crisp thin glowing lines ----
+    float fade = exp(-te * 0.20);                  // farther walls dim -> depth
+    vec3  room = vec3(0.004, 0.013, 0.024);        // near-black navy wall base
+    room += CYAN * grid * fade * 0.55;             // crisp thin grid lines
+    room += CYAN * 0.010 * fade;                   // very faint wall ambient
+    room += CYAN * smoothstep(0.42, 0.0, length(ndc)) * 0.05; // subtle back glow
 
-    // vignette + grain
-    float vig = smoothstep(1.30, 0.30, length(ndc));
-    room *= mix(0.45, 1.0, vig);
+    // vignette + grain (darker toward the edges)
+    float vig = smoothstep(1.45, 0.45, length(ndc));
+    room *= mix(0.30, 1.0, vig);
     room += (hash21(uv * vec2(1920.0, 1080.0)) - 0.5) * 0.012;
 
     // ---- composite: room + cartridge scene + bloom ----
