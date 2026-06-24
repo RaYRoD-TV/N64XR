@@ -20,20 +20,39 @@ struct Builder {
     std::vector<Vertex>&   v;
     std::vector<uint32_t>& idx;
 
-    void tri(const Vec3& a, const Vec3& b, const Vec3& c) {
+    // Emit a triangle with EXPLICIT per-vertex barycentric. The wireframe
+    // shader lights a pixel where any barycentric coord -> 0; by adding +1 to
+    // the coord OPPOSITE an edge we want hidden, that edge's interior never
+    // dips to 0 and stays dark. This lets us draw ONLY real cartridge edges
+    // and suppress the internal triangulation diagonals.
+    void triB(const Vec3& a, const Vec3& b, const Vec3& c,
+              const Vec3& ba, const Vec3& bb, const Vec3& bc) {
         Vec3 n = normalize(cross(sub(b, a), sub(c, a)));
         uint32_t base = static_cast<uint32_t>(v.size());
-        v.push_back({ a.x, a.y, a.z, n.x, n.y, n.z, 1, 0, 0 });
-        v.push_back({ b.x, b.y, b.z, n.x, n.y, n.z, 0, 1, 0 });
-        v.push_back({ c.x, c.y, c.z, n.x, n.y, n.z, 0, 0, 1 });
+        v.push_back({ a.x, a.y, a.z, n.x, n.y, n.z, ba.x, ba.y, ba.z });
+        v.push_back({ b.x, b.y, b.z, n.x, n.y, n.z, bb.x, bb.y, bb.z });
+        v.push_back({ c.x, c.y, c.z, n.x, n.y, n.z, bc.x, bc.y, bc.z });
         idx.push_back(base);
         idx.push_back(base + 1);
         idx.push_back(base + 2);
     }
-    // CCW quad (a,b,c,d) -> two tris.
+
+    // Standard triangle — all three edges drawn (one-hot barycentric).
+    void tri(const Vec3& a, const Vec3& b, const Vec3& c) {
+        triB(a, b, c, Vec3{1,0,0}, Vec3{0,1,0}, Vec3{0,0,1});
+    }
+
+    // CCW quad -> two tris, with the SHARED DIAGONAL (a-c) hidden so only the
+    // four real quad edges light up.
     void quad(const Vec3& a, const Vec3& b, const Vec3& c, const Vec3& d) {
-        tri(a, b, c);
-        tri(a, c, d);
+        triB(a, b, c, Vec3{1,1,0}, Vec3{0,1,0}, Vec3{0,1,1}); // hide a-c (opp b)
+        triB(a, c, d, Vec3{1,0,1}, Vec3{0,1,1}, Vec3{0,0,1}); // hide a-c (opp d)
+    }
+
+    // Fan triangle (apex a, rim b-c) that draws ONLY its outer rim edge b-c;
+    // the two spokes a-b and a-c are hidden. For polygon cap fans.
+    void fanTri(const Vec3& a, const Vec3& b, const Vec3& c) {
+        triB(a, b, c, Vec3{1,1,1}, Vec3{0,1,1}, Vec3{0,1,1});
     }
 };
 
@@ -80,8 +99,9 @@ void BuildCartridge(std::vector<Vertex>& outVerts,
         for (size_t i = 0; i < o.size(); ++i) {
             const V2 p0 = o[i];
             const V2 p1 = o[(i + 1) % o.size()];
-            // wind so the face normal points -Z (outward at the back)
-            b.tri(cen, P(p1.x, p1.y, -hd), P(p0.x, p0.y, -hd));
+            // wind so the face normal points -Z (outward at the back); fan so
+            // only the outline rim draws (spokes to centre stay hidden).
+            b.fanTri(cen, P(p1.x, p1.y, -hd), P(p0.x, p0.y, -hd));
         }
     }
 
