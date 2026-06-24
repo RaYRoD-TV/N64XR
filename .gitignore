@@ -452,3 +452,8 @@ assets/_pending/
 *.v64
 *.z64
 *.rom
+
+# User-supplied cartridge models (not committed — repo ships procedural fallback)
+assets/models/*.glb
+assets/models/*.gltf
+assets/models/*.bin

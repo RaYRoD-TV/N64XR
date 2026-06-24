@@ -15,6 +15,7 @@ add_executable(n64xr_frontend
     src/SettingsScreen.cpp
     src/HoloStage.cpp
     src/Cartridge.cpp
+    src/MeshGLB.cpp
     src/GlassPanel.cpp
     src/SettingsStore.cpp
 )

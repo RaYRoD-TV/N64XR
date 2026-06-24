@@ -14,8 +14,11 @@
 
 #include <spdlog/spdlog.h>
 
+#include <algorithm>
 #include <array>
+#include <cctype>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <stdexcept>
 
@@ -159,7 +162,34 @@ VkShaderModule HoloStage::loadShader(const std::string& file) const {
 void HoloStage::uploadGeometry() {
     std::vector<Vertex>   verts;
     std::vector<uint32_t> indices;
-    BuildCartridge(verts, indices);
+
+    // Prefer a user-supplied model in assets/models/ (cartridge.glb first, then
+    // any .glb/.gltf); fall back to the procedural cartridge if none loads.
+    bool loaded = false;
+    {
+        namespace fs = std::filesystem;
+        std::error_code ec;
+        const fs::path dir = "assets/models";
+        if (fs::exists(dir, ec) && fs::is_directory(dir, ec)) {
+            std::vector<fs::path> candidates;
+            const fs::path preferred = dir / "cartridge.glb";
+            if (fs::exists(preferred, ec)) candidates.push_back(preferred);
+            for (const auto& e : fs::directory_iterator(dir, ec)) {
+                fs::path p = e.path();
+                std::string ext = p.extension().string();
+                std::transform(ext.begin(), ext.end(), ext.begin(),
+                               [](unsigned char c){ return static_cast<char>(std::tolower(c)); });
+                if ((ext == ".glb" || ext == ".gltf") && p != preferred) candidates.push_back(p);
+            }
+            for (const auto& c : candidates)
+                if (LoadCartridgeMesh(c.string(), verts, indices)) { loaded = true; break; }
+        }
+    }
+    if (!loaded) {
+        BuildCartridge(verts, indices);
+        spdlog::info("HoloStage: using the built-in procedural cartridge (drop a .glb in assets/models/ to override).");
+    }
+
     m_indexCount = static_cast<uint32_t>(indices.size());
 
     const VkDeviceSize vsize = sizeof(Vertex) * verts.size();

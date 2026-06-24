@@ -16,6 +16,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 #include <vector>
 
 namespace n64xr::holo {
@@ -23,11 +24,19 @@ namespace n64xr::holo {
 struct Vertex {
     float px, py, pz;   // object-space position
     float nx, ny, nz;   // object-space normal (hard / per-face)
-    float bx, by, bz;   // barycentric stamp
+    float bx, by, bz;   // barycentric stamp (crease-only when loaded from glTF)
 };
 
-// Build the cartridge. Appends into the provided vectors (cleared first).
+// Build the procedural cartridge (default / fallback when no model is present).
 void BuildCartridge(std::vector<Vertex>& outVerts,
                     std::vector<uint32_t>& outIndices);
+
+// Load a .glb/.gltf cartridge model into the same Vertex format, with
+// crease-only barycentric so the wireframe shader draws just the real edges.
+// Auto-centres / orients / scales the mesh. Returns false on any failure so
+// the caller can fall back to BuildCartridge.
+bool LoadCartridgeMesh(const std::string& path,
+                       std::vector<Vertex>& outVerts,
+                       std::vector<uint32_t>& outIndices);
 
 } // namespace n64xr::holo
