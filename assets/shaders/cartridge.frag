@@ -55,8 +55,9 @@ void main() {
     //      the rim cross 1.0 and get to bloom. ----
     vec3 col = vec3(0.0);
 
-    // faint translucent face: a whisper of brass over navy.
-    col += mix(NAVY, BRASS, 0.22) * (0.06 + 0.07 * ndv);
+    // faint translucent face: warm brass over a hint of navy (kept warm so
+    // stacked translucency reads amber-gold, not lilac).
+    col += mix(NAVY, BRASS, 0.55) * (0.07 + 0.08 * ndv);
 
     // brass wireframe edges (dim — the structure, not the spectacle).
     col += BRASS * wire * 0.50;
@@ -69,9 +70,10 @@ void main() {
 
     col *= flicker;
 
-    // subtle chromatic fringe on the extreme rim only.
-    float fr = pow(1.0 - ndv, 6.0) * 0.35;
-    col.b += fr;
+    // subtle warm chromatic fringe on the extreme rim only (amber, not blue).
+    float fr = pow(1.0 - ndv, 6.0) * 0.30;
+    col.r += fr;
+    col.g += fr * 0.5;
 
     // alpha: faces nearly see-through; edges / rim / sweep carry the form.
     float alpha = clamp(0.07 + wire * 0.55 + fres * 0.40 + band * 0.85, 0.0, 1.0);

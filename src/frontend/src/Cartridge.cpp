@@ -1,7 +1,7 @@
 // ============================================================================
 //  Cartridge.cpp — procedural N64 cartridge geometry.
 // ----------------------------------------------------------------------------
-//  Real carts measure ~120 x 80 x 11 mm  ->  W:H:D ~ 1.0 : 0.67 : 0.09.
+//  Real N64 carts are PORTRAIT — ~89 x 119 x 22 mm  ->  W:H:D ~ 0.75 : 1.0 : 0.18.
 //  We exaggerate the chamfer / label inset / notch slightly so they read in
 //  wireframe. All faces emitted via Tri() which stamps a per-face normal +
 //  barycentric corner, so the whole mesh is wireframe-ready.
@@ -48,7 +48,7 @@ void BuildCartridge(std::vector<Vertex>& outVerts,
     Builder b{ outVerts, outIndices };
 
     // --- Canonical proportions (width = 1.0) ---
-    const float W = 1.0f, H = 0.67f, D = 0.11f;
+    const float W = 0.75f, H = 1.0f, D = 0.15f;   // portrait, like a real N64 cart
     const float hw = W * 0.5f, hh = H * 0.5f, hd = D * 0.5f;
     const float cham  = 0.085f * H;   // top-corner chamfer (exaggerated)
     const float taper = 0.035f * W;   // per-side bottom inset
