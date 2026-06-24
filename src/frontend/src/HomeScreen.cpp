@@ -124,9 +124,11 @@ static void RunSmokeTest(AppState& s) {
     s.statusLine = "Entering VR...";
     n64xr::XrSession session;
     if (!session.initialize()) {
-        spdlog::warn("XrSession::initialize() returned false — no headset?");
-        s.statusLine        = "Headset did not answer. Returned to launcher.";
-        s.openxrRuntime     = "OpenXR runtime: unreachable.";
+        spdlog::warn("XrSession::initialize() returned false — OpenXR init failed "
+                     "(no active VR session? connect Virtual Desktop / SteamVR / Oculus).");
+        s.statusLine    = "VR session unavailable — connect your headset "
+                          "(start Virtual Desktop / SteamVR), then press ENTER VR.";
+        s.openxrRuntime = "OpenXR: init failed — no active VR session.";
         s.vrSessionInFlight = false;
         return;
     }
