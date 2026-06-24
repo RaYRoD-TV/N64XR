@@ -21,6 +21,7 @@
 #include "AliveIdle.h"
 #include "Screens.h"
 #include "AppState.h"
+#include "HoloStage.h"
 
 // GLFW_INCLUDE_VULKAN is set as a frontend compile def (see src/frontend/CMakeLists.txt)
 // so glfw3.h pulls in vulkan.h automatically — don't redefine here.
@@ -160,6 +161,9 @@ struct UiHost::Impl {
 
     VkDescriptorPool          imguiPool  = VK_NULL_HANDLE;
 
+    n64xr::holo::HoloStage    holo;
+    bool                      holoReady = false;
+
     alive::State              aliveState;
     bool                      swapchainDirty = false;
 
@@ -186,6 +190,12 @@ int UiHost::run(int /*argc*/, char** /*argv*/) {
     m_impl->initVulkan();
     m_impl->createSwapchain();
     m_impl->initImGui();
+
+    m_impl->holo.init(
+        m_impl->physical, m_impl->device, m_impl->gfxFamily,
+        m_impl->gfxQueue, m_impl->cmdPool, m_impl->scExtent,
+        m_impl->scFormat, m_impl->renderPass, "assets/shaders");
+    m_impl->holoReady = true;
 
     // Friendly first status line.
     m_state.statusLine    = "Awaiting cartridge.";
@@ -439,6 +449,7 @@ void UiHost::Impl::recreateSwapchain() {
     if (imguiPool) {
         ImGui_ImplVulkan_SetMinImageCount(2);
     }
+    if (holoReady) holo.resize(scExtent);
     swapchainDirty = false;
 }
 
@@ -649,6 +660,18 @@ void UiHost::Impl::drawFrame(UiHost& outer) {
     bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     VkCheck(vkBeginCommandBuffer(cmd, &bi), "vkBeginCommandBuffer");
 
+    // 3D holo cartridge + bloom into HoloStage's own offscreen targets —
+    // MUST happen before the swapchain render pass begins.
+    if (holoReady) {
+        double mxp = 0.0, myp = 0.0;
+        glfwGetCursorPos(window, &mxp, &myp);
+        int ww = 0, wh = 0;
+        glfwGetWindowSize(window, &ww, &wh);
+        const float px = (ww > 0) ? float((mxp / double(ww)) * 2.0 - 1.0) : 0.0f;
+        const float py = (wh > 0) ? float((myp / double(wh)) * 2.0 - 1.0) : 0.0f;
+        holo.renderOffscreen(cmd, outer.m_state.elapsedSeconds(), px, py);
+    }
+
     VkClearValue clear{};
     auto& bg = theme::Colours().deepNavyBg;
     clear.color = { { bg.x, bg.y, bg.z, bg.w } };
@@ -661,6 +684,7 @@ void UiHost::Impl::drawFrame(UiHost& outer) {
     rp.clearValueCount   = 1;
     rp.pClearValues      = &clear;
     vkCmdBeginRenderPass(cmd, &rp, VK_SUBPASS_CONTENTS_INLINE);
+    if (holoReady) holo.compositeFullscreen(cmd, scExtent);
     ImGui_ImplVulkan_RenderDrawData(dd, cmd);
     vkCmdEndRenderPass(cmd);
     VkCheck(vkEndCommandBuffer(cmd), "vkEndCommandBuffer");
@@ -698,6 +722,8 @@ void UiHost::Impl::drawFrame(UiHost& outer) {
 // ---------------------------------------------------------------------------
 void UiHost::Impl::shutdown() {
     if (device) vkDeviceWaitIdle(device);
+
+    if (holoReady) { holo.shutdown(); holoReady = false; }
 
     if (ImGui::GetCurrentContext()) {
         ImGui_ImplVulkan_Shutdown();

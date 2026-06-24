@@ -112,4 +112,7 @@ if (EXISTS "${N64XR_ASSETS_SRC}")
                 "$<TARGET_FILE_DIR:n64xr_frontend>/assets"
         COMMENT "Mirroring assets/ next to the frontend exe")
     add_dependencies(n64xr_copy_assets n64xr_frontend)
+    # NB: shader .spv land in the same assets/shaders dir, but copy_directory
+    # MERGES (source has only .vert/.frag, never .spv), so there is no clobber
+    # and no ordering dependency is needed between copy + compile.
 endif()
