@@ -256,12 +256,20 @@ void HoloStage::createRenderPasses() {
         sub.pDepthStencilAttachment = &depRef;
 
         std::array<VkSubpassDependency, 2> deps{};
+        // external -> subpass: sync the colour AND depth attachment clears with
+        // the layout transitions (the depth half was missing -> WRITE-AFTER-WRITE
+        // hazard, garbage depth, every fragment discarded).
         deps[0].srcSubpass    = VK_SUBPASS_EXTERNAL;
         deps[0].dstSubpass    = 0;
-        deps[0].srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        deps[0].dstStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        deps[0].srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+                                VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                                VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+        deps[0].dstStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+                                VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                                VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
         deps[0].srcAccessMask = 0;
-        deps[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        deps[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+                                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
         deps[1].srcSubpass    = 0;
         deps[1].dstSubpass    = VK_SUBPASS_EXTERNAL;
         deps[1].srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -441,9 +449,12 @@ void HoloStage::createPipelines() {
         vi.pVertexAttributeDescriptions    = attrs.data();
 
         VkPipelineDepthStencilStateCreateInfo ds{ VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO };
-        ds.depthTestEnable  = VK_TRUE;
-        ds.depthWriteEnable = VK_FALSE;  // translucent hologram: test, don't write
-        ds.depthCompareOp   = VK_COMPARE_OP_LESS;
+        // Translucent wireframe hologram: NO depth test. We WANT the far edges
+        // to show through the near faces, and it makes the render independent of
+        // the depth attachment's (unsynchronised) clear state.
+        ds.depthTestEnable  = VK_FALSE;
+        ds.depthWriteEnable = VK_FALSE;
+        ds.depthCompareOp   = VK_COMPARE_OP_ALWAYS;
 
         // alpha blend (ghost-glass hologram)
         VkPipelineColorBlendAttachmentState cba{};
