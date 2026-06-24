@@ -1,9 +1,10 @@
 // ============================================================================
-//  Theme.cpp — palette + typography + spacing.
+//  Theme.cpp — cyan/teal holographic palette + typography + angular HUD style.
 // ----------------------------------------------------------------------------
-//  No external state besides ImGui's font atlas + style.  Fonts are looked
-//  up under <exe-dir>/assets/fonts/; if any are missing we log a warning
-//  and fall back to the built-in proggy so the launcher still boots.
+//  Fonts are looked up under <exe-dir>/assets/fonts/; if any are missing we
+//  log a warning and fall back to the built-in proggy so the launcher boots.
+//  The style keeps WindowBg/ChildBg translucent and pushes the energy into
+//  cyan borders — that is what reads as "light projected onto glass."
 // ============================================================================
 
 #include "Theme.h"
@@ -66,25 +67,21 @@ void LoadFonts(float dpiScale) {
     g_fonts.displaySmall = TryLoadFont(atlas, "Orbitron-Regular.ttf",      px(20.0f));
     g_fonts.phosphor     = TryLoadFont(atlas, "VT323-Regular.ttf",         px(22.0f));
 
-    // If JetBrainsMono is missing, promote default to body so calls to
-    // PushFont(body) don't crash with nullptr.
     if (!g_fonts.body) {
         spdlog::warn("Theme: JetBrainsMono missing — using ImGui default as body face.");
         g_fonts.body = atlas->Fonts.back();
     }
-    // ImGui 1.92 bakes font textures lazily on first use — the old
-    // ImFontAtlas::Build() is no longer needed (and was removed).
+    // ImGui 1.92 bakes font textures lazily on first use.
 }
 
 // ---------------------------------------------------------------------------
-//  Style — palette + spacing + rounding.
+//  Style — cyan HUD palette + angular spacing + minimal rounding.
 // ---------------------------------------------------------------------------
 void ApplyStyle(float dpiScale) {
     ImGuiStyle& s = ImGui::GetStyle();
     ImVec4* c     = s.Colors;
     const Palette& p = g_palette;
 
-    // Convenience: a darker variant of brass for "active" state.
     auto mul = [](ImVec4 col, float k) {
         return ImVec4(col.x * k, col.y * k, col.z * k, col.w);
     };
@@ -92,68 +89,68 @@ void ApplyStyle(float dpiScale) {
         return ImVec4(col.x, col.y, col.z, a);
     };
 
-    c[ImGuiCol_Text]                  = p.agedPaper;
-    c[ImGuiCol_TextDisabled]          = p.agedPaperDim;
-    c[ImGuiCol_TextSelectedBg]        = with_alpha(p.brass, 0.45f);
+    c[ImGuiCol_Text]                  = p.coolWhite;
+    c[ImGuiCol_TextDisabled]          = p.coolWhiteDim;
+    c[ImGuiCol_TextSelectedBg]        = with_alpha(p.cyan, 0.40f);
 
-    c[ImGuiCol_WindowBg]              = p.deepNavyBg;
-    c[ImGuiCol_ChildBg]               = p.panelNavy;
-    c[ImGuiCol_PopupBg]               = p.panelNavyRaised;
+    c[ImGuiCol_WindowBg]              = p.panelNavy;
+    c[ImGuiCol_ChildBg]               = with_alpha(p.panelNavy, 0.75f);
+    c[ImGuiCol_PopupBg]               = with_alpha(p.panelNavyRaised, 0.96f);
     c[ImGuiCol_MenuBarBg]             = p.panelNavyRaised;
 
-    c[ImGuiCol_Border]                = p.borderWarm;
+    c[ImGuiCol_Border]                = with_alpha(p.cyan, 0.55f);
     c[ImGuiCol_BorderShadow]          = ImVec4(0,0,0,0);
 
-    c[ImGuiCol_FrameBg]               = p.panelNavyRaised;
-    c[ImGuiCol_FrameBgHovered]        = with_alpha(p.brass, 0.20f);
-    c[ImGuiCol_FrameBgActive]         = with_alpha(p.brass, 0.40f);
+    c[ImGuiCol_FrameBg]               = with_alpha(p.panelNavyRaised, 0.75f);
+    c[ImGuiCol_FrameBgHovered]        = with_alpha(p.cyan, 0.22f);
+    c[ImGuiCol_FrameBgActive]         = with_alpha(p.cyanDim, 1.00f);
 
     c[ImGuiCol_TitleBg]               = p.panelNavy;
     c[ImGuiCol_TitleBgActive]         = p.panelNavyRaised;
     c[ImGuiCol_TitleBgCollapsed]      = p.panelNavy;
 
-    c[ImGuiCol_Button]                = with_alpha(p.brass,    0.16f);
-    c[ImGuiCol_ButtonHovered]         = with_alpha(p.brassHot, 0.55f);
-    c[ImGuiCol_ButtonActive]          = mul(p.brassHot, 0.80f);
+    c[ImGuiCol_Button]                = with_alpha(p.cyan,    0.14f);
+    c[ImGuiCol_ButtonHovered]         = with_alpha(p.cyanHot, 0.45f);
+    c[ImGuiCol_ButtonActive]          = mul(p.cyanHot, 0.80f);
 
-    c[ImGuiCol_Header]                = with_alpha(p.brass, 0.20f);
-    c[ImGuiCol_HeaderHovered]         = with_alpha(p.brass, 0.45f);
-    c[ImGuiCol_HeaderActive]          = with_alpha(p.brassHot, 0.65f);
+    c[ImGuiCol_Header]                = with_alpha(p.cyan, 0.18f);
+    c[ImGuiCol_HeaderHovered]         = with_alpha(p.cyan, 0.40f);
+    c[ImGuiCol_HeaderActive]          = with_alpha(p.cyanHot, 0.55f);
 
-    c[ImGuiCol_CheckMark]             = p.brassHot;
-    c[ImGuiCol_SliderGrab]            = p.brass;
-    c[ImGuiCol_SliderGrabActive]      = p.brassHot;
+    c[ImGuiCol_CheckMark]             = p.activeGreen;
+    c[ImGuiCol_SliderGrab]            = p.cyan;
+    c[ImGuiCol_SliderGrabActive]      = p.cyanHot;
 
-    c[ImGuiCol_Tab]                   = p.panelNavyRaised;
-    c[ImGuiCol_TabHovered]            = with_alpha(p.brass, 0.55f);
-    c[ImGuiCol_TabActive]             = with_alpha(p.brassHot, 0.50f);
+    c[ImGuiCol_Tab]                   = with_alpha(p.panelNavy, 1.0f);
+    c[ImGuiCol_TabHovered]            = with_alpha(p.cyan, 0.45f);
+    c[ImGuiCol_TabActive]             = with_alpha(p.cyan, 0.30f);
     c[ImGuiCol_TabUnfocused]          = p.panelNavy;
-    c[ImGuiCol_TabUnfocusedActive]    = with_alpha(p.brass, 0.30f);
+    c[ImGuiCol_TabUnfocusedActive]    = with_alpha(p.cyanDim, 0.40f);
 
-    c[ImGuiCol_Separator]             = with_alpha(p.brassDim, 0.45f);
-    c[ImGuiCol_SeparatorHovered]      = p.brass;
-    c[ImGuiCol_SeparatorActive]       = p.brassHot;
+    c[ImGuiCol_Separator]             = with_alpha(p.cyanDim, 0.55f);
+    c[ImGuiCol_SeparatorHovered]      = p.cyan;
+    c[ImGuiCol_SeparatorActive]       = p.cyanHot;
 
-    c[ImGuiCol_ScrollbarBg]           = with_alpha(p.deepNavyBg, 0.0f);
-    c[ImGuiCol_ScrollbarGrab]         = with_alpha(p.brassDim, 0.65f);
-    c[ImGuiCol_ScrollbarGrabHovered]  = p.brass;
-    c[ImGuiCol_ScrollbarGrabActive]   = p.brassHot;
+    c[ImGuiCol_ScrollbarBg]           = with_alpha(p.voidBg, 0.0f);
+    c[ImGuiCol_ScrollbarGrab]         = with_alpha(p.cyanDim, 0.65f);
+    c[ImGuiCol_ScrollbarGrabHovered]  = p.cyan;
+    c[ImGuiCol_ScrollbarGrabActive]   = p.cyanHot;
 
-    c[ImGuiCol_ResizeGrip]            = with_alpha(p.brassDim, 0.30f);
-    c[ImGuiCol_ResizeGripHovered]     = p.brass;
-    c[ImGuiCol_ResizeGripActive]      = p.brassHot;
+    c[ImGuiCol_ResizeGrip]            = with_alpha(p.cyanDim, 0.30f);
+    c[ImGuiCol_ResizeGripHovered]     = p.cyan;
+    c[ImGuiCol_ResizeGripActive]      = p.cyanHot;
 
-    c[ImGuiCol_NavHighlight]          = p.brassHot;
-    c[ImGuiCol_NavWindowingHighlight] = with_alpha(p.brassHot, 0.85f);
+    c[ImGuiCol_NavHighlight]          = p.cyanHot;
+    c[ImGuiCol_NavWindowingHighlight] = with_alpha(p.cyanHot, 0.85f);
     c[ImGuiCol_NavWindowingDimBg]     = ImVec4(0,0,0,0.40f);
     c[ImGuiCol_ModalWindowDimBg]      = ImVec4(0,0,0,0.55f);
 
-    c[ImGuiCol_PlotLines]             = p.brass;
-    c[ImGuiCol_PlotLinesHovered]      = p.brassHot;
-    c[ImGuiCol_PlotHistogram]         = p.copper;
-    c[ImGuiCol_PlotHistogramHovered]  = p.brassHot;
+    c[ImGuiCol_PlotLines]             = p.cyan;
+    c[ImGuiCol_PlotLinesHovered]      = p.cyanHot;
+    c[ImGuiCol_PlotHistogram]         = p.cyanDim;
+    c[ImGuiCol_PlotHistogramHovered]  = p.cyanHot;
 
-    // ---- Geometry — instruments-panel-y, never balloon-y ------------------
+    // ---- Geometry — angular HUD, never balloon-y ------------------------
     s.WindowPadding       = ImVec2(18, 16);
     s.FramePadding        = ImVec2(12,  7);
     s.CellPadding         = ImVec2( 8,  4);
@@ -163,17 +160,17 @@ void ApplyStyle(float dpiScale) {
     s.ScrollbarSize       = 14.0f;
     s.GrabMinSize         = 12.0f;
 
-    s.WindowRounding      = 0.0f;  // launcher fills the screen
-    s.ChildRounding       = 6.0f;
-    s.FrameRounding       = 4.0f;
-    s.PopupRounding       = 6.0f;
-    s.ScrollbarRounding   = 12.0f;
-    s.GrabRounding        = 4.0f;
-    s.TabRounding         = 4.0f;
+    s.WindowRounding      = 0.0f;
+    s.ChildRounding       = 2.0f;
+    s.FrameRounding       = 2.0f;
+    s.PopupRounding       = 2.0f;
+    s.ScrollbarRounding   = 8.0f;
+    s.GrabRounding        = 2.0f;
+    s.TabRounding         = 2.0f;
 
     s.WindowBorderSize    = 0.0f;
     s.ChildBorderSize     = 1.0f;
-    s.FrameBorderSize     = 0.0f;
+    s.FrameBorderSize     = 1.0f;
     s.PopupBorderSize     = 1.0f;
     s.TabBorderSize       = 0.0f;
 

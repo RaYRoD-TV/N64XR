@@ -18,6 +18,9 @@ add_executable(n64xr_frontend
     src/MeshGLB.cpp
     src/GlassPanel.cpp
     src/SettingsStore.cpp
+    src/Icons.cpp
+    src/Carousel.cpp
+    src/BottomNav.cpp
 )
 
 add_executable(N64XR::Frontend ALIAS n64xr_frontend)

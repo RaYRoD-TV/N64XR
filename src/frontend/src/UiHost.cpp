@@ -23,6 +23,7 @@
 #include "AppState.h"
 #include "HoloStage.h"
 #include "SettingsStore.h"
+#include "BottomNav.h"
 
 // GLFW_INCLUDE_VULKAN is set as a frontend compile def (see src/frontend/CMakeLists.txt)
 // so glfw3.h pulls in vulkan.h automatically — don't redefine here.
@@ -538,7 +539,7 @@ void UiHost::Impl::composeFrame(UiHost& outer) {
         ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
         ImGuiWindowFlags_NoMove     | ImGuiWindowFlags_NoCollapse |
         ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus |
-        ImGuiWindowFlags_MenuBar    | ImGuiWindowFlags_NoScrollbar;
+        ImGuiWindowFlags_NoScrollbar;
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0,0));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
@@ -561,84 +562,15 @@ void UiHost::Impl::composeFrame(UiHost& outer) {
                         aliveState, outer.m_state.showScanlines);
     }
 
-    // ---- Menu bar ---------------------------------------------------------
-    if (ImGui::BeginMenuBar()) {
-        if (ImGui::BeginMenu("Console")) {
-            if (ImGui::MenuItem("Step Into the Room")) {
-                outer.m_state.currentScreen      = Screen::Home;
-                outer.m_state.vrSessionInFlight  = true;
-            }
-            if (ImGui::MenuItem("Smoke Test (270 magenta frames)")) {
-                outer.m_state.currentScreen      = Screen::Home;
-                outer.m_state.vrSessionInFlight  = true;
-                outer.m_state.lastSmokeTestNote  = "Smoke test queued from Console menu.";
-            }
-            ImGui::Separator();
-            if (ImGui::MenuItem("Power Down")) {
-                glfwSetWindowShouldClose(window, GLFW_TRUE);
-            }
-            ImGui::EndMenu();
-        }
-        if (ImGui::BeginMenu("Equipment")) {
-            if (ImGui::MenuItem("Slot Cartridge...")) {
-                outer.m_state.currentScreen = Screen::CartridgeVault;
-            }
-            if (ImGui::MenuItem("Bring Out the Toolbox")) {
-                outer.m_state.currentScreen = Screen::ServiceHatch;
-            }
-            ImGui::EndMenu();
-        }
-        if (ImGui::BeginMenu("View")) {
-            ImGui::MenuItem("Cold Light (dark theme)", nullptr, &outer.m_state.coldLight);
-            ImGui::MenuItem("Alive Idle layer",        nullptr, &outer.m_state.showAliveIdle);
-            ImGui::MenuItem("Scanlines",               nullptr, &outer.m_state.showScanlines);
-            ImGui::EndMenu();
-        }
-        ImGui::EndMenuBar();
-    }
-
-    // ---- Tab spine (the XMB-inspired horizontal axis) ---------------------
-    ImGui::Dummy(ImVec2(0, 6));
-    ImGui::Indent(24.0f);
-    auto& palette = theme::Colours();
-    const ImVec4 tabIdle   = palette.agedPaperDim;
-    const ImVec4 tabActive = palette.brassHot;
-
-    auto tab = [&](const char* label, Screen s) {
-        const bool active = (outer.m_state.currentScreen == s);
-        ImGui::PushStyleColor(ImGuiCol_Text, active ? tabActive : tabIdle);
-        ImGui::PushFont(theme::GetFonts().displaySmall ? theme::GetFonts().displaySmall : ImGui::GetFont());
-        if (ImGui::Selectable(label, active, 0,
-                              ImVec2(ImGui::CalcTextSize(label).x + 28.0f, 0))) {
-            outer.m_state.currentScreen = s;
-        }
-        ImGui::PopFont();
-        ImGui::PopStyleColor();
-        if (active) {
-            // brass underline
-            ImDrawList* dl  = ImGui::GetWindowDrawList();
-            const ImVec2 mn = ImGui::GetItemRectMin();
-            const ImVec2 mx = ImGui::GetItemRectMax();
-            const ImU32  col= ImGui::ColorConvertFloat4ToU32(tabActive);
-            dl->AddLine(ImVec2(mn.x + 8, mx.y + 2), ImVec2(mx.x - 8, mx.y + 2), col, 2.0f);
-        }
-        ImGui::SameLine();
-    };
-    tab("  HOME  ",            Screen::Home);
-    tab("  CARTRIDGE VAULT  ", Screen::CartridgeVault);
-    tab("  SERVICE HATCH  ",   Screen::ServiceHatch);
-    ImGui::NewLine();
-    ImGui::Unindent(24.0f);
-
-    // ---- Active screen ----------------------------------------------------
-    ImGui::Dummy(ImVec2(0, 8));
-    ImGui::Indent(24.0f);
+    // ---- Active screen (each screen owns its own layout / chrome) ---------
     switch (outer.m_state.currentScreen) {
         case Screen::Home:           DrawHomeScreen       (outer.m_state); break;
         case Screen::CartridgeVault: DrawRomBrowserScreen (outer.m_state); break;
         case Screen::ServiceHatch:   DrawSettingsScreen   (outer.m_state); break;
     }
-    ImGui::Unindent(24.0f);
+
+    // ---- Bottom icon nav (Games / Settings / Controller / VR Options) -----
+    DrawBottomNav(outer.m_state, outer.m_state.elapsedSeconds());
 
     // ---- Phosphor strip ---------------------------------------------------
     DrawPhosphorStatusStrip(outer.m_state);
