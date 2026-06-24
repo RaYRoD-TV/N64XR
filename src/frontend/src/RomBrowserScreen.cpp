@@ -9,6 +9,7 @@
 #include "Screens.h"
 #include "AppState.h"
 #include "Theme.h"
+#include "SettingsStore.h"
 
 #include <imgui.h>
 #include <spdlog/spdlog.h>
@@ -61,6 +62,9 @@ static void Rescan(AppState& s) {
                  + " cartridge" + (s.roms.size() == 1 ? "" : "s") + ".";
     spdlog::info("Cartridge Vault scan: {} files under '{}'.",
                  s.roms.size(), s.romScanPath);
+
+    // Persist the path that just produced results so it survives a reboot.
+    SaveSettings(s);
 }
 
 static std::string PrettySize(std::uintmax_t b) {

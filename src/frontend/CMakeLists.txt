@@ -16,6 +16,7 @@ add_executable(n64xr_frontend
     src/HoloStage.cpp
     src/Cartridge.cpp
     src/GlassPanel.cpp
+    src/SettingsStore.cpp
 )
 
 add_executable(N64XR::Frontend ALIAS n64xr_frontend)
@@ -39,6 +40,7 @@ target_link_libraries(n64xr_frontend
         Vulkan::Vulkan
         spdlog::spdlog
         fmt::fmt
+        nlohmann_json::nlohmann_json
 )
 
 target_compile_definitions(n64xr_frontend PRIVATE

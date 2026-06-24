@@ -22,6 +22,7 @@
 #include "Screens.h"
 #include "AppState.h"
 #include "HoloStage.h"
+#include "SettingsStore.h"
 
 // GLFW_INCLUDE_VULKAN is set as a frontend compile def (see src/frontend/CMakeLists.txt)
 // so glfw3.h pulls in vulkan.h automatically — don't redefine here.
@@ -197,11 +198,19 @@ int UiHost::run(int /*argc*/, char** /*argv*/) {
         m_impl->scFormat, m_impl->renderPass, "assets/shaders");
     m_impl->holoReady = true;
 
+    // Restore persisted settings (ROM scan path, view toggles) before the
+    // first frame; flag a rescan so the loaded path populates the vault.
+    LoadSettings(m_state);
+    m_state.needsRescan = true;
+
     // Friendly first status line.
     m_state.statusLine    = "Awaiting cartridge.";
     m_state.openxrRuntime = "OpenXR runtime: not yet probed.";
 
     m_impl->mainLoop(*this);
+
+    // Persist on the way out.
+    SaveSettings(m_state);
     return 0;
 }
 
