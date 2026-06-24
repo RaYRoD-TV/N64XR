@@ -742,7 +742,7 @@ void HoloStage::renderOffscreen(VkCommandBuffer cmd, float timeSeconds,
 
         Mat4 model = mul(rotateY(yaw + tiltY), rotateX(tiltX));
 
-        const Vec3 eye{ 0.0f, 0.05f, 2.35f };
+        const Vec3 eye{ 0.0f, 0.05f, 2.95f };   // pulled back — jewel-like, not frame-filling
         const Vec3 center{ 0.0f, 0.0f, 0.0f };
         const Vec3 up{ 0.0f, 1.0f, 0.0f };
         Mat4 view = lookAt(eye, center, up);
@@ -872,7 +872,7 @@ void HoloStage::compositeFullscreen(VkCommandBuffer cmd, VkExtent2D swapExtent) 
     pc.invResolution[0] = 1.0f / float(swapExtent.width);
     pc.invResolution[1] = 1.0f / float(swapExtent.height);
     pc.time             = float(0.0); // time animated in starfield via fragCoord hash + below
-    pc.bloomStrength    = 0.85f;
+    pc.bloomStrength    = 0.32f;   // restrained — glow, not a white-out
     vkCmdPushConstants(cmd, m_compositeLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(pc), &pc);
     vkCmdDraw(cmd, 3, 1, 0, 0);
 }

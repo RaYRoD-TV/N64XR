@@ -31,48 +31,50 @@ void main() {
     float t   = u.timeParams.x;
     vec3  N   = normalize(vWorldNrm);
     vec3  V   = normalize(u.camPos.xyz - vWorldPos);
-    float ndv = max(dot(N, V), 0.0);
+    float ndv = clamp(dot(N, V), 0.0, 1.0);
 
-    // (1) barycentric wireframe, fwidth-AA.
-    vec3  d = fwidth(vBary);
-    vec3  a = smoothstep(vec3(0.0), d * 1.5, vBary);
-    float wire = 1.0 - min(min(a.x, a.y), a.z);
+    // (1) barycentric wireframe — thin, fwidth-AA.
+    vec3  d    = fwidth(vBary);
+    vec3  aa   = smoothstep(vec3(0.0), d * 1.1, vBary);
+    float wire = 1.0 - min(min(aa.x, aa.y), aa.z);
 
-    // (2) fresnel rim — high exponent so only grazing angles bloom.
-    float fres = pow(1.0 - ndv, 3.5);
+    // (2) fresnel rim — only grazing angles light up.
+    float fres = pow(1.0 - ndv, 3.0);
 
-    // (3) single travelling phosphor scanline sweep up object-Y.
-    float sweep = fract(vObjHeight * 1.5 - t * u.timeParams.z);
-    float bandG = smoothstep(0.96, 1.0, sweep) + smoothstep(0.96, 1.0, 1.0 - sweep);
+    // (3) one travelling phosphor sweep up object-Y — the hero glow.
+    float sweep = fract(vObjHeight * 1.15 - t * u.timeParams.z);
+    float band  = smoothstep(0.90, 1.0, sweep);
 
-    // fine screen-space raster lines, very subtle.
-    float raster = 0.5 + 0.5 * sin(gl_FragCoord.y * 1.3);
-    raster = mix(1.0, raster, 0.10);
+    // (4) gentle flicker — never strobing.
+    float flicker = 0.94 + 0.06 * sin(t * 6.0) * sin(t * 11.0);
+    float noise   = hash21(floor(gl_FragCoord.xy * 0.5) + floor(t * 20.0));
+    flicker *= 1.0 - 0.03 * noise;
 
-    // (5) gentle flicker + scanline noise, never strobing.
-    float flicker = 0.92 + 0.08 * sin(t * 7.0) * sin(t * 13.0);
-    float noise   = hash21(floor(gl_FragCoord.xy * 0.5) + floor(t * 24.0));
-    flicker *= 1.0 - 0.04 * noise;
+    // ---- compose; values kept mostly < 1 so ACES preserves the COLOUR
+    //      instead of clipping everything to white. Only the sweep band and
+    //      the rim cross 1.0 and get to bloom. ----
+    vec3 col = vec3(0.0);
 
-    float faceFill = 0.10 + 0.06 * ndv;        // (4) translucent interior
-    float edges    = wire * 1.4 + fres * 1.1;
-    float glow     = bandG * 1.6;
+    // faint translucent face: a whisper of brass over navy.
+    col += mix(NAVY, BRASS, 0.22) * (0.06 + 0.07 * ndv);
 
-    float intensity = (faceFill + edges + glow) * flicker * raster;
+    // brass wireframe edges (dim — the structure, not the spectacle).
+    col += BRASS * wire * 0.50;
 
-    vec3 col = NAVY;
-    col = mix(col, BRASS,  clamp(fres + wire * 0.5, 0.0, 1.0));
-    col = mix(col, PHOSPH, clamp(glow + wire * 0.4, 0.0, 1.0));
-    col *= intensity;
+    // brass fresnel rim.
+    col += BRASS * fres * 0.55;
 
-    // chromatic fringe along the rim only.
-    float fr = pow(1.0 - ndv, 5.0) * 0.5;
-    col.r += fr * PHOSPH.r * 0.4;
-    col.b += fr * 0.6;
+    // phosphor sweep — the one element that truly glows + blooms.
+    col += PHOSPH * band * 1.25;
 
-    // soft knee so highlights roll instead of clipping (HDR target tolerates >1).
-    col = col / (col + vec3(0.7)) * 1.7;
+    col *= flicker;
 
-    float alpha = clamp(faceFill * 0.4 + edges * 0.8 + glow, 0.0, 1.0);
+    // subtle chromatic fringe on the extreme rim only.
+    float fr = pow(1.0 - ndv, 6.0) * 0.35;
+    col.b += fr;
+
+    // alpha: faces nearly see-through; edges / rim / sweep carry the form.
+    float alpha = clamp(0.07 + wire * 0.55 + fres * 0.40 + band * 0.85, 0.0, 1.0);
+
     outColor = vec4(col, alpha);
 }
