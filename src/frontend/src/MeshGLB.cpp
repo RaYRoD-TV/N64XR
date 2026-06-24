@@ -143,6 +143,26 @@ bool LoadCartridgeMesh(const std::string& path,
         P[i] = Vec3{ cx * scale, cy * scale, cz * scale };
     }
 
+    // ---- orientation correction --------------------------------------------
+    //  Auto-orient can't tell which way is "up"/"front", so dial it here if a
+    //  model loads rotated. Degrees, applied X then Y then Z. (Default: a 90°
+    //  roll to stand a landscape-authored cart upright.)
+    {
+        const float kRotX = 0.0f;
+        const float kRotY = 0.0f;
+        const float kRotZ = 90.0f;
+        if (kRotX != 0.0f || kRotY != 0.0f || kRotZ != 0.0f) {
+            const float dr = 3.14159265f / 180.0f;
+            const Mat4 R = mul(mul(rotateZ(kRotZ * dr), rotateY(kRotY * dr)), rotateX(kRotX * dr));
+            for (auto& p : P) {
+                const float x = p.x, y = p.y, z = p.z;
+                p.x = R.m[0][0]*x + R.m[1][0]*y + R.m[2][0]*z;
+                p.y = R.m[0][1]*x + R.m[1][1]*y + R.m[2][1]*z;
+                p.z = R.m[0][2]*x + R.m[1][2]*y + R.m[2][2]*z;
+            }
+        }
+    }
+
     // ---- face normals ----
     std::vector<Vec3> fn(tris.size());
     for (size_t t = 0; t < tris.size(); ++t) {

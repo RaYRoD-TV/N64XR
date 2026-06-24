@@ -103,6 +103,15 @@ inline Mat4 rotateX(float angleRad) {
     return r;
 }
 
+inline Mat4 rotateZ(float angleRad) {
+    Mat4 r = Mat4::identity();
+    const float c = std::cos(angleRad);
+    const float s = std::sin(angleRad);
+    r.m[0][0] = c;   r.m[1][0] = -s;
+    r.m[0][1] = s;   r.m[1][1] = c;
+    return r;
+}
+
 inline Mat4 translate(float x, float y, float z) {
     Mat4 r = Mat4::identity();
     r.m[3][0] = x; r.m[3][1] = y; r.m[3][2] = z;
