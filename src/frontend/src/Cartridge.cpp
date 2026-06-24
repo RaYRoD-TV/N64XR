@@ -69,29 +69,30 @@ void BuildCartridge(std::vector<Vertex>& outVerts,
     // --- Portrait proportions, like a real N64 cart ---
     const float W = 0.75f, H = 1.0f, D = 0.15f;
     const float hw = W * 0.5f, hh = H * 0.5f, hd = D * 0.5f;
-    const float taper = 0.035f * W;   // per-side bottom inset
-    const float br    = 0.03f;        // bottom corner round
-    const float sY    = 0.26f;        // shoulder height (top of the vertical sides)
 
-    // N64 silhouette (XY plane), CCW: flat bottom, vertical sides, rounded
-    // shoulders rising to a wide gently-domed CROWN — the signature top.
+    // N64 silhouette = a portrait ROUNDED RECTANGLE: vertical sides, a wide
+    // near-flat (barely domed) top with GENEROUS rounded corners, and tight
+    // bottom corners. Built CCW with arc'd corners so it reads true.
     struct V2 { float x, y; };
-    const std::array<V2, 14> o = { {
-        { -hw + taper, -hh           },  //  0 bottom-left
-        {  hw - taper, -hh           },  //  1 bottom-right
-        {  hw,         -hh + br       },  //  2 bottom-right round
-        {  hw,          sY            },  //  3 right side -> shoulder
-        {  hw - 0.015f, sY + 0.07f    },  //  4 shoulder curve
-        {  hw - 0.060f, hh - 0.050f   },  //  5 upper-right corner curve
-        {  hw - 0.130f, hh - 0.005f   },  //  6 crown start (right)
-        {  0.105f,      hh            },  //  7 crown right
-        { -0.105f,      hh            },  //  8 crown left
-        { -hw + 0.130f, hh - 0.005f   },  //  9 crown start (left)
-        { -hw + 0.060f, hh - 0.050f   },  // 10 upper-left corner curve
-        { -hw + 0.015f, sY + 0.07f    },  // 11 shoulder curve
-        { -hw,          sY            },  // 12 left side
-        { -hw,         -hh + br       },  // 13 left side bottom round
-    } };
+    std::vector<V2> o;
+    {
+        const float PI   = 3.14159265f;
+        const float Rt   = 0.185f;  // top corner radius (generous)
+        const float Rb   = 0.05f;   // bottom corner radius (tight)
+        const float dome = 0.02f;   // subtle top-centre rise
+        const int   seg  = 6;
+        auto arc = [&](float cx, float cy, float r, float a0, float a1) {
+            for (int i = 0; i <= seg; ++i) {
+                float t = a0 + (a1 - a0) * (float(i) / float(seg));
+                o.push_back({ cx + r * std::cos(t), cy + r * std::sin(t) });
+            }
+        };
+        arc(-hw + Rb, -hh + Rb, Rb, PI,        1.5f * PI); // bottom-left  corner
+        arc( hw - Rb, -hh + Rb, Rb, 1.5f * PI, 2.0f * PI); // bottom-right corner
+        arc( hw - Rt,  hh - Rt, Rt, 0.0f,      0.5f * PI); // top-right    corner
+        o.push_back({ 0.0f, hh + dome });                  // subtle crown apex
+        arc(-hw + Rt,  hh - Rt, Rt, 0.5f * PI, PI);        // top-left     corner
+    }
 
     // ---- Pass 1: side wall ring (front z=+hd .. back z=-hd) ----
     for (size_t i = 0; i < o.size(); ++i) {
@@ -140,28 +141,7 @@ void BuildCartridge(std::vector<Vertex>& outVerts,
         b.quad(r01, r00, P(lx0, ly0, zr), P(lx0, ly1, zr)); // left
     }
 
-    // ---- Pass 3: BACK finger-grip ridges (V-grooves across lower-rear) ----
-    {
-        const int   N   = 4;
-        const float gy0 = -hh + 0.10f * H;
-        const float gy1 = -hh + 0.46f * H;
-        const float gw  = (gy1 - gy0) / static_cast<float>(N);
-        const float gx0 = -hw + taper + 0.06f * W;
-        const float gx1 =  hw - taper - 0.06f * W;
-        const float depth = 0.30f * D;   // groove depth (toward +Z, into body)
-        for (int i = 0; i < N; ++i) {
-            const float y0 = gy0 + i * gw;
-            const float y1 = y0 + gw * 0.7f;
-            const float ym = (y0 + y1) * 0.5f;
-            // V-groove: two angled quads meeting at the recessed centre line.
-            const float zb = -hd;            // back surface
-            const float zr = -hd + depth;    // recessed valley
-            b.quad(P(gx0, y0, zb), P(gx1, y0, zb), P(gx1, ym, zr), P(gx0, ym, zr));
-            b.quad(P(gx0, ym, zr), P(gx1, ym, zr), P(gx1, y1, zb), P(gx0, y1, zb));
-        }
-    }
-
-    // ---- Pass 4: BOTTOM connector notch (inset slot + guide tabs) ----
+    // ---- Bottom connector notch (inset slot) ----
     {
         const float sx    = hw * 0.66f;       // slot half-width
         const float sUp   = -hh + 0.16f * H;  // slot ceiling (inside body)
