@@ -1,8 +1,9 @@
 #version 450
 
-// Paints the deep-space CABINET background, adds bloom, tonemaps. Runs inside
-// the swapchain pass before ImGui. Output is opaque (alpha 1) so ImGui blends
-// over it normally.
+// Paints an enclosed cyan-grid ROOM interior (floor + ceiling + side walls +
+// back wall, in perspective — the camera sits inside the box), adds the
+// holographic cartridge scene + bloom, tonemaps. Runs inside the swapchain
+// pass before ImGui; output is opaque so ImGui blends over it.
 layout(location = 0) in vec2 uv;
 layout(location = 0) out vec4 outColor;
 
@@ -10,16 +11,12 @@ layout(set = 0, binding = 0) uniform sampler2D sceneTex;  // HDR cartridge
 layout(set = 0, binding = 1) uniform sampler2D bloomTex;  // bloom mip[0]
 
 layout(push_constant) uniform PC {
-    vec2  invResolution;
+    vec2  invResolution;   // (1/w, 1/h)
     float time;
     float bloomStrength;
 } pc;
 
-// Palette.
-const vec3 DEEP_NAVY = vec3(0.043, 0.063, 0.102); // #0B101A
-const vec3 NAVY_TOP  = vec3(0.020, 0.030, 0.060);
-const vec3 PHOSPH    = vec3(0.486, 0.890, 0.545);
-const vec3 BRASS     = vec3(0.788, 0.604, 0.239);
+const vec3 CYAN = vec3(0.157, 0.902, 0.941); // #28E6F0
 
 float hash21(vec2 p) {
     p = fract(p * vec2(123.34, 456.21));
@@ -27,48 +24,63 @@ float hash21(vec2 p) {
     return fract(p.x * p.y);
 }
 
-// Soft starfield: sparse points on a hashed grid, two parallax layers.
-float starLayer(vec2 uvp, float density, float bright) {
-    vec2 g  = floor(uvp * density);
-    vec2 f  = fract(uvp * density);
-    float h = hash21(g);
-    // only a few cells host a star
-    float present = step(0.985, h);
-    vec2  c = vec2(hash21(g + 1.3), hash21(g + 7.7));
-    float d = length(f - c);
-    float star = present * smoothstep(0.06, 0.0, d);
-    // gentle twinkle
-    star *= 0.6 + 0.4 * sin(h * 100.0);
-    return star * bright;
-}
-
 void main() {
-    // ---- deep-navy vertical gradient ----
-    vec3 bg = mix(DEEP_NAVY, NAVY_TOP, uv.y);
+    // ---- view ray from inside the room, looking down -Z ----
+    vec2  ndc    = uv * 2.0 - 1.0;
+    float aspect = pc.invResolution.y / max(pc.invResolution.x, 1e-6); // w/h
+    vec3  ro = vec3(0.0, 0.0, 0.0);
+    vec3  rd = normalize(vec3(ndc.x * aspect, -ndc.y, -1.55));
 
-    // ---- parallax starfield (two layers, faint) ----
-    vec2 p = uv;
-    p.x *= (pc.invResolution.y / max(pc.invResolution.x, 1e-6)); // aspect-correct
-    float stars = starLayer(p, 16.0, 0.55) + starLayer(p * 1.7 + 3.1, 28.0, 0.30);
-    bg += vec3(0.7, 0.78, 0.9) * stars;
+    // ---- the room box (camera near the front, back wall far down -Z) ----
+    const float HW = 2.30, HH = 1.32, DEPTH = 7.2;
+    const vec3  boxC = vec3(0.0, 0.0, -DEPTH * 0.5);
+    const vec3  hw   = vec3(HW, HH, DEPTH * 0.5);
 
-    // ---- soft vignette ----
-    vec2 vc = uv - 0.5;
-    float vig = smoothstep(0.95, 0.35, length(vc));
-    bg *= mix(0.55, 1.0, vig);
+    vec3 oc  = ro - boxC;
+    vec3 inv = 1.0 / rd;
+    vec3 t1  = (-hw - oc) * inv;
+    vec3 t2  = ( hw - oc) * inv;
+    vec3 tm  = max(t1, t2);
+    float te = min(min(tm.x, tm.y), tm.z);     // exit = the wall we see
+    te = max(te, 0.001);
 
-    // ---- grain ----
-    float grain = hash21(uv * vec2(1920.0, 1080.0)) - 0.5;
-    bg += grain * 0.015;
+    vec3 hit = ro + rd * te;
+    vec3 hl  = hit - boxC;
 
-    // ---- composite: background + scene + bloom ----
+    // tangent coords of whichever face we hit (so the grid lies in-plane)
+    vec3 an = abs(hl) / hw;
+    vec2 tang;
+    if (an.x >= an.y && an.x >= an.z)      tang = hl.zy;  // side wall
+    else if (an.y >= an.z)                 tang = hl.xz;  // floor / ceiling
+    else                                   tang = hl.xy;  // back wall
+
+    // ---- grid lines, fwidth-AA ----
+    const float cell = 0.58;
+    vec2  g     = tang / cell;
+    vec2  gd    = abs(fract(g) - 0.5);
+    vec2  gwid  = fwidth(g);
+    vec2  lines = smoothstep(vec2(0.5), vec2(0.5) - gwid * 2.2, gd);
+    float grid  = max(lines.x, lines.y);
+
+    // ---- shade the room ----
+    float fade = exp(-te * 0.165);                 // farther walls dim -> depth
+    vec3  room = vec3(0.008, 0.024, 0.045);        // dark wall base
+    room += CYAN * grid * fade * 0.95;             // glowing grid lines
+    room += CYAN * 0.035 * fade;                   // faint wall ambient
+    room += CYAN * smoothstep(0.55, 0.0, length(ndc)) * 0.09; // back vanishing glow
+
+    // vignette + grain
+    float vig = smoothstep(1.30, 0.30, length(ndc));
+    room *= mix(0.45, 1.0, vig);
+    room += (hash21(uv * vec2(1920.0, 1080.0)) - 0.5) * 0.012;
+
+    // ---- composite: room + cartridge scene + bloom ----
     vec3 scene = texture(sceneTex, uv).rgb;
     vec3 bloom = texture(bloomTex, uv).rgb * pc.bloomStrength;
-    vec3 hdr   = bg + scene + bloom;
+    vec3 hdr   = room + scene + bloom;
 
     // ACES-ish tonemap.
-    vec3 x = hdr;
-    vec3 mapped = clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0);
-
+    vec3 mapped = clamp((hdr * (2.51 * hdr + 0.03)) / (hdr * (2.43 * hdr + 0.59) + 0.14),
+                        0.0, 1.0);
     outColor = vec4(mapped, 1.0);
 }

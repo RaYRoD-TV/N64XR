@@ -44,7 +44,7 @@ void DrawSettingsScreen(AppState& state) {
 
     // ---- group: lighting ----
     ImGui::PushStyleColor(ImGuiCol_ChildBg, pal.panelNavy);
-    ImGui::BeginChild("##lighting", ImVec2(0, 130), true);
+    ImGui::BeginChild("##lighting", ImVec2(0, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
     Row("Cabinet Lighting", "how the room feels under your hands");
     ImGui::Dummy(ImVec2(0, 6));
     ImGui::Checkbox("  Cold Light  ( dark cabinet, brass details )", &state.coldLight);
@@ -58,7 +58,7 @@ void DrawSettingsScreen(AppState& state) {
 
     // ---- group: idle ----
     ImGui::PushStyleColor(ImGuiCol_ChildBg, pal.panelNavy);
-    ImGui::BeginChild("##idle", ImVec2(0, 130), true);
+    ImGui::BeginChild("##idle", ImVec2(0, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
     Row("Idle Behaviour", "the cabinet is never fully asleep");
     ImGui::Dummy(ImVec2(0, 6));
     ImGui::Checkbox("  Alive Idle layer",                   &state.showAliveIdle);
@@ -73,7 +73,7 @@ void DrawSettingsScreen(AppState& state) {
 
     // ---- group: cartridge vault path ----
     ImGui::PushStyleColor(ImGuiCol_ChildBg, pal.panelNavy);
-    ImGui::BeginChild("##vault", ImVec2(0, 110), true);
+    ImGui::BeginChild("##vault", ImVec2(0, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
     Row("Cartridge Shelf", "where the cabinet looks for cartridges");
     ImGui::Dummy(ImVec2(0, 6));
     char buf[512] = {};
@@ -92,7 +92,7 @@ void DrawSettingsScreen(AppState& state) {
 
     // ---- group: refresh ----
     ImGui::PushStyleColor(ImGuiCol_ChildBg, pal.panelNavy);
-    ImGui::BeginChild("##refresh", ImVec2(0, 110), true);
+    ImGui::BeginChild("##refresh", ImVec2(0, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
     Row("Refresh Cadence", "how often the cabinet thinks per second");
     ImGui::Dummy(ImVec2(0, 6));
     ImGui::SetNextItemWidth(320);

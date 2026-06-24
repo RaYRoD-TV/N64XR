@@ -16,10 +16,10 @@ layout(set = 0, binding = 0) uniform UBO {
 
 layout(location = 0) out vec4 outColor;
 
-// Palette (linear-ish).
-const vec3 BRASS  = vec3(0.788, 0.604, 0.239); // #C99A3D
-const vec3 PHOSPH = vec3(0.486, 0.890, 0.545); // #7CE38B
-const vec3 NAVY   = vec3(0.043, 0.063, 0.137);
+// Palette — cyan holographic, to match the cyan HUD.
+const vec3 BRASS  = vec3(0.157, 0.902, 0.941); // primary cyan (kept var name)
+const vec3 PHOSPH = vec3(0.600, 0.960, 1.000); // bright cyan-white sweep
+const vec3 NAVY   = vec3(0.020, 0.075, 0.110); // deep teal interior
 
 float hash21(vec2 p) {
     p = fract(p * vec2(123.34, 456.21));

@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <string>
 #include <vector>
 
 namespace n64xr::ui {
@@ -31,64 +32,92 @@ inline ImU32 WithA(ImU32 rgb, float a) {
 float g_scroll = 0.0f;
 bool  g_init   = false;
 
+// Build an N64-cartridge silhouette path (generous rounded TOP corners, tight
+// BOTTOM corners) into dl's current path. Convex, so it fills + strokes clean.
+void CartridgePath(ImDrawList* dl, ImVec2 q0, ImVec2 q1, float rTop, float rBot) {
+    rTop = ImMin(rTop, (q1.x - q0.x) * 0.5f);
+    rBot = ImMin(rBot, (q1.x - q0.x) * 0.5f);
+    dl->PathClear();
+    dl->PathArcTo(ImVec2(q0.x + rBot, q1.y - rBot), rBot, IM_PI * 0.5f, IM_PI,        8); // bottom-left
+    dl->PathArcTo(ImVec2(q0.x + rTop, q0.y + rTop), rTop, IM_PI,        IM_PI * 1.5f, 12); // top-left
+    dl->PathArcTo(ImVec2(q1.x - rTop, q0.y + rTop), rTop, IM_PI * 1.5f, IM_PI * 2.0f, 12); // top-right
+    dl->PathArcTo(ImVec2(q1.x - rBot, q1.y - rBot), rBot, 0.0f,         IM_PI * 0.5f,  8); // bottom-right
+}
+
+// Draw text fit to maxW, ellipsising with "..." if needed. Centred at cx.
+void TextFit(ImDrawList* dl, ImFont* f, float px, float cx, float y,
+             ImU32 col, const char* text, float maxW) {
+    std::string s = text ? text : "";
+    if (f->CalcTextSizeA(px, FLT_MAX, 0.0f, s.c_str()).x > maxW) {
+        while (s.size() > 1 &&
+               f->CalcTextSizeA(px, FLT_MAX, 0.0f, (s + "...").c_str()).x > maxW)
+            s.pop_back();
+        s += "...";
+    }
+    const float w = f->CalcTextSizeA(px, FLT_MAX, 0.0f, s.c_str()).x;
+    dl->AddText(f, px, ImVec2(cx - w * 0.5f + 1, y + 1), (col & 0x00FFFFFFu) | 0xB0000000u, s.c_str());
+    dl->AddText(f, px, ImVec2(cx - w * 0.5f,     y),     col,                                s.c_str());
+}
+
 void DrawCard(ImDrawList* dl, ImVec2 p0, ImVec2 p1, float scale, float alpha,
               bool hero, bool transparentBody, const char* title,
               ImFont* font, const theme::Palette& pal) {
-    auto A = [&](float a) { return (int)(ImClamp(a * alpha, 0.0f, 1.0f) * 255); };
-    const ImU32 cyan    = U32(pal.cyan);
-    const ImU32 cyanDim = U32(pal.cyanDim);
-    const float r       = 12.0f * scale;
+    const float W = p1.x - p0.x, H = p1.y - p0.y;
+    const float rTop = W * 0.32f, rBot = W * 0.07f;
+    auto Acol = [&](ImU32 rgb, float a){ return WithA(rgb, ImClamp(a * alpha, 0.0f, 1.0f)); };
+    const ImU32 cyan = U32(pal.cyan), cyanDim = U32(pal.cyanDim);
 
+    // floor shadow ellipse-ish
     {
-        float sw = (p1.x - p0.x) * 0.55f;
-        ImVec2 sc((p0.x + p1.x) * 0.5f, p1.y + 8.0f * scale);
-        dl->AddRectFilled(ImVec2(sc.x - sw, sc.y), ImVec2(sc.x + sw, sc.y + 14.0f * scale),
-                          IM_COL32(0, 0, 0, (int)(0.40f * 255 * alpha)), 14.0f * scale);
+        float sw = W * 0.40f;
+        ImVec2 sc((p0.x + p1.x) * 0.5f, p1.y + 6.0f * scale);
+        dl->AddRectFilled(ImVec2(sc.x - sw, sc.y), ImVec2(sc.x + sw, sc.y + 12.0f * scale),
+                          WithA(IM_COL32(0,0,0,255), 0.35f * alpha), 8.0f * scale);
     }
 
+    // outer glow (cartridge-shaped)
     for (int g = 4; g >= 1; --g) {
-        float e = g * 3.0f * scale;
-        dl->AddRect(ImVec2(p0.x - e, p0.y - e), ImVec2(p1.x + e, p1.y + e),
-                    WithA(cyan, ImClamp((0.10f / g) * alpha, 0.0f, 1.0f)),
-                    r + e, 0, 2.0f);
+        float e = g * 2.5f * scale;
+        CartridgePath(dl, ImVec2(p0.x - e, p0.y - e), ImVec2(p1.x + e, p1.y + e), rTop + e, rBot + e);
+        dl->AddPolyline(dl->_Path.Data, dl->_Path.Size, Acol(cyan, 0.10f / g), ImDrawFlags_Closed, 2.0f);
+        dl->PathClear();
     }
 
+    // body
+    CartridgePath(dl, p0, p1, rTop, rBot);
+    if (!transparentBody)
+        dl->AddConvexPolyFilled(dl->_Path.Data, dl->_Path.Size,
+                                WithA(IM_COL32(10, 20, 32, 255), 0.95f * alpha));
+    dl->AddPolyline(dl->_Path.Data, dl->_Path.Size, Acol(cyan, 1.0f),
+                    ImDrawFlags_Closed, ImMax(1.8f * scale, 1.1f));
+    dl->PathClear();
+
+    // label / art well (recessed front panel) — square-ish, upper-centre
+    ImVec2 lab0(p0.x + W * 0.13f, p0.y + H * 0.13f);
+    ImVec2 lab1(p1.x - W * 0.13f, p0.y + H * 0.62f);
     if (!transparentBody) {
-        dl->AddRectFilled(p0, p1, IM_COL32(10, 18, 30, A(0.92f)), r);
-        ImVec2 s1(p1.x, ImLerp(p0.y, p1.y, 0.45f));
-        dl->AddRectFilledMultiColor(p0, s1,
-            IM_COL32(150, 240, 255, A(0.16f)), IM_COL32(150, 240, 255, A(0.16f)),
-            IM_COL32(150, 240, 255, A(0.0f)),  IM_COL32(150, 240, 255, A(0.0f)));
+        dl->AddRectFilled(lab0, lab1, WithA(IM_COL32(5, 12, 21, 255), 0.92f * alpha), 4.0f * scale);
+        // faint inner sheen
+        dl->AddRectFilledMultiColor(lab0, ImVec2(lab1.x, ImLerp(lab0.y, lab1.y, 0.4f)),
+            Acol(IM_COL32(150, 240, 255, 255), 0.10f), Acol(IM_COL32(150, 240, 255, 255), 0.10f),
+            WithA(cyan, 0.0f), WithA(cyan, 0.0f));
     }
+    dl->AddRect(lab0, lab1, Acol(cyanDim, 0.9f), 4.0f * scale, 0, 1.0f);
 
-    dl->AddRect(p0, p1, WithA(cyan, ImClamp(alpha, 0.0f, 1.0f)), r, 0, ImMax(1.6f * scale, 1.0f));
-
-    ImVec2 lw0(p0.x + 10 * scale, p0.y + 12 * scale);
-    ImVec2 lw1(p1.x - 10 * scale, p0.y + 56 * scale);
-    dl->AddRectFilled(lw0, lw1, IM_COL32(5, 11, 19, A(0.85f)), 6 * scale);
-    dl->AddRect(lw0, lw1, WithA(cyanDim, ImClamp(alpha, 0.0f, 1.0f)), 6 * scale, 0, 1.0f);
-
-    for (int i = 0; i < 3; ++i) {
-        float y = ImLerp(p0.y, p1.y, 0.62f + i * 0.10f);
-        dl->AddLine(ImVec2(p0.x + 14 * scale, y), ImVec2(p1.x - 14 * scale, y),
-                    WithA(cyanDim, 0.5f * alpha), 1.0f);
-    }
-
+    // game name, inside the label, ellipsised (no more cut-off mid-word)
     if (title && title[0]) {
-        dl->PushClipRect(lw0, lw1, true);
-        const float px = (hero ? font->LegacySize * 0.95f : font->LegacySize * 0.78f);
-        ImVec2 ts = font->CalcTextSizeA(px, FLT_MAX, 0.0f, title);
-        ImVec2 tp((lw0.x + lw1.x) * 0.5f - ts.x * 0.5f, (lw0.y + lw1.y) * 0.5f - ts.y * 0.5f);
-        dl->AddText(font, px, ImVec2(tp.x + 1, tp.y + 1), IM_COL32(0, 0, 0, A(0.7f)), title);
-        dl->AddText(font, px, tp, IM_COL32(210, 250, 255, A(1.0f)), title);
-        dl->PopClipRect();
+        const float px = font->LegacySize * (hero ? 0.62f : 0.50f);
+        const float cx = (lab0.x + lab1.x) * 0.5f;
+        const float maxW = (lab1.x - lab0.x) - 8.0f * scale;
+        TextFit(dl, font, px, cx, (lab0.y + lab1.y) * 0.5f - px * 0.5f,
+                Acol(IM_COL32(210, 250, 255, 255), 1.0f), title, maxW);
     }
 
-    if (hero) {
-        ImVec2 r0(p0.x, p1.y + 4), r1(p1.x, p1.y + 4 + (p1.y - p0.y) * 0.5f);
-        dl->AddRectFilledMultiColor(r0, r1,
-            WithA(cyan, 0.20f * alpha), WithA(cyan, 0.20f * alpha),
-            WithA(cyan, 0.0f),          WithA(cyan, 0.0f));
+    // lower grip ridges
+    for (int i = 0; i < 4; ++i) {
+        float y = ImLerp(p0.y, p1.y, 0.72f + i * 0.055f);
+        dl->AddLine(ImVec2(p0.x + W * 0.20f, y), ImVec2(p1.x - W * 0.20f, y),
+                    Acol(cyanDim, 0.45f), 1.0f);
     }
 }
 
@@ -136,19 +165,19 @@ bool DrawCarousel(AppState& state, ImVec2 a, ImVec2 b, float time) {
         return std::fabs(x - g_scroll) > std::fabs(y - g_scroll);
     });
 
-    const float spread = 178.0f;
+    const float spread = 232.0f;
     bool activated = false;
 
     for (int idx : order) {
         const float d  = (float)idx - g_scroll;
         const float ad = std::fabs(d);
         const float t  = ImClamp(ad / 3.0f, 0.0f, 1.0f);
-        const float scale = ImLerp(1.00f, 0.55f, t * t);
-        const float alpha = ImLerp(1.00f, 0.18f, t);
-        const float lift  = ImLerp(0.0f, 30.0f, t * t);
+        const float scale = ImLerp(1.00f, 0.58f, t * t);
+        const float alpha = ImLerp(1.00f, 0.16f, t);
+        const float lift  = ImLerp(0.0f, 26.0f, t * t);
         const float dirX = (d < 0 ? -1.0f : 1.0f);
-        const float x    = center.x + dirX * spread * (0.55f * ad + 0.45f * ad * ad) * 0.82f;
-        const float cardW = 168.0f * scale, cardH = 232.0f * scale;
+        const float x    = center.x + dirX * spread * (0.62f * ad + 0.38f * ad * ad);
+        const float cardW = 164.0f * scale, cardH = 226.0f * scale;
         ImVec2 p0(x - cardW * 0.5f, center.y - cardH * 0.5f + lift);
         ImVec2 p1(p0.x + cardW, p0.y + cardH);
         const bool hero = (idx == state.selectedRom);
