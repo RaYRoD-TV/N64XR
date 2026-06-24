@@ -457,3 +457,9 @@ assets/_pending/
 assets/models/*.glb
 assets/models/*.gltf
 assets/models/*.bin
+
+# Mupen64Plus prebuilt Windows deps package (cloned locally for the core build)
+vendor/mupen64plus-win32-deps/
+# Vendored core/plugin MSVC build outputs
+vendor/**/x64/
+vendor/**/projects/msvc/x64/
